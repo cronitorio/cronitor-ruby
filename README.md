@@ -22,7 +22,55 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+### Creating a Monitor
+
+A Cronitor monitor (hereafter referred to only as a monitor for brevity) is created if it does not already exist, and its ID returned.
+
+```ruby
+require 'cronitor'
+
+monitor_options = {
+    name: 'My Fancy Monitor',
+    notifications: {
+        emails: [],
+        slack: [],
+        pagerduty: [],
+        phones: [],
+        webhooks: []
+    },
+    rules: [
+        {
+            rule_type: 'not_run_in',
+            duration: 5
+            time_unit: 'seconds'
+        }
+    ],
+    note: 'A human-friendly description of this monitor'
+}
+my_monitor = Cronitor.new token: 'api_token', opts: monitor_options
+```
+
+### Pinging a Monitor
+
+Once you’ve created a monitor, you can continue to use the existing instance of the object to ping the monitor that your task status: `run`, `complete`, or `fail`.
+
+```ruby
+my_monitor.run
+my_monitor.complete
+my_monitor.fail 'A short description of the failure'
+```
+
+### Pinging a monitor when you have a Cronitor code
+
+You may already have the code for a monitor, in which case, the expense of `Cronitor.new` may seem unnecessary (since it makes an HTTP request to check if a monitor exists, and you already know it does).
+
+In that case:
+
+```ruby
+my_monitor = Cronitor.new code: 'abcd'
+```
+
+The aforementioned ping methods can now be used.
 
 ## Development
 
