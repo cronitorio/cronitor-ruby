@@ -1,5 +1,13 @@
 require 'cronitor/version'
+require 'net/http'
+require 'unirest'
 
-module Cronitor
-  # Your code goes here...
+class Cronitor
+  attr_accessor :token, :opts, :code
+
+  def initialize(token: nil, opts: {}, code: nil)
+    @token = token
+    @opts = opts
+    @code = code
+  end
 end
