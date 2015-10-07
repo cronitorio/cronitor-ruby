@@ -25,4 +25,11 @@ describe Cronitor do
       expect(@monitor.code).to eq 'abcd'
     end
   end
+
+  context 'external request' do
+    it 'tries to make a request w/ Unirest' do
+      response = Unirest.get 'http://cronitor.io/'
+      expect(response.body).to be_an_instance_of String
+    end
+  end
 end
