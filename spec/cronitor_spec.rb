@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Cronitor do
+RSpec.describe Cronitor do
   it 'has a version number' do
     expect(Cronitor::VERSION).not_to be nil
   end
