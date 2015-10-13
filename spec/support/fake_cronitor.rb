@@ -1,7 +1,7 @@
 require 'sinatra/base'
 
 class FakeCronitor < Sinatra::Base
-  get 'v1/monitors/:id' do
+  get '/v1/monitors/:id' do
     if ['abcd', 'Test Cronitor'].include? params['id']
       json_response 200, 'existing_monitor'
     end
@@ -9,7 +9,7 @@ class FakeCronitor < Sinatra::Base
     json_response 404
   end
 
-  post 'v1/monitors' do
+  post '/v1/monitors' do
     payload = JSON.parse request.body.read
     json_response 400, 'invalid_no_name' unless payload.key? 'name'
     json_response 400, 'invalid_no_rules' unless payload.key? 'rules'
