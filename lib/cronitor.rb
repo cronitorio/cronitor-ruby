@@ -56,7 +56,7 @@ class Cronitor
   end
 
   def server_error?(response)
-    return unless [301, 302, 500, 502, 503, 504].include? response.code
+    return unless [301, 302, 404, 500, 502, 503, 504].include? response.code
 
     fail(
       Cronitor::Error,
