@@ -34,7 +34,7 @@ class Cronitor
   end
 
   def validate(response)
-    return if response.code == 200
+    return if [200, 201].include? response.code
     server_error? response
 
     fail Cronitor::Error, error_msg(response.body)
