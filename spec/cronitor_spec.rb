@@ -116,4 +116,43 @@ RSpec.describe Cronitor do
       end
     end
   end
+
+  describe '.ping' do
+    let(:monitor) { Cronitor.new token: token, opts: monitor_options }
+    let(:monitor_options) do
+      {
+        name: 'My Fancy Monitor',
+        notifications: { emails: ['test@example.com'] },
+        rules: [{
+          rule_type: 'not_completed_in',
+          duration: 5,
+          time_unit: 'seconds',
+          human_readable: 'Has not received a complete ping in over 5 minutes'
+        }],
+        note: 'A human-friendly description of this monitor'
+      }
+    end
+
+    %w(run complete fail).each do |ping_type|
+      context 'with a valid monitor' do
+        describe ping_type do
+          it 'notifies Cronitor' do
+            expect(monitor.ping(ping_type)).to eq true
+          end
+        end
+      end
+
+      context 'with an invalid monitor' do
+        before { monitor.code = 'ijkl' }
+
+        describe ping_type do
+          it 'raises Cronitor::Error exception' do
+            expect { monitor.ping(ping_type) }.to raise_error(
+              Cronitor::Error,
+              'Something else has gone awry. HTTP status: 404')
+          end
+        end
+      end
+    end
+  end
 end

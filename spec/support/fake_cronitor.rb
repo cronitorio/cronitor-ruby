@@ -18,6 +18,12 @@ class FakeCronitor < Sinatra::Base
     json_response 200, 'new_monitor'
   end
 
+  %w(run complete fail).each do |ping|
+    get "/abcd/#{ping}" do
+      200
+    end
+  end
+
   private
 
   def json_response(response_code, file_name = nil)
