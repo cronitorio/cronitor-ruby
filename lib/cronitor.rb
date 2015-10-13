@@ -42,9 +42,7 @@ class Cronitor
 
   private
 
-  def error_msg(body)
-    msg = []
-
+  def error_msg(body, msg = [])
     body.each do |opt, value|
       if value.respond_to? 'each'
         value.each do |error_msg|
