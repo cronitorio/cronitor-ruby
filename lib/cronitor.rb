@@ -29,18 +29,17 @@ class Cronitor
       parameters: opts.to_json
     )
 
-    validate response
-    @code = response.body['code']
+    @code = response.body['code'] if valid? response
   end
 
-  def validate(response)
-    return if [200, 201].include? response.code
+  private
+
+  def valid?(response)
+    return true if [200, 201].include? response.code
     server_error? response
 
     fail Cronitor::Error, error_msg(response.body)
   end
-
-  private
 
   def error_msg(body, msg = [])
     body.each do |opt, value|
