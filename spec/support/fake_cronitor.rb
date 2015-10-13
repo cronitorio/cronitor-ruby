@@ -11,9 +11,10 @@ class FakeCronitor < Sinatra::Base
 
   post '/v1/monitors' do
     payload = JSON.parse request.body.read
-    json_response 400, 'invalid_no_name' unless payload.key? 'name'
-    json_response 400, 'invalid_no_rules' unless payload.key? 'rules'
-    json_response 400, 'invalid_no_notifications' unless payload.key? 'notifications'
+    # Check that we have the necessary payload values very simply
+    %w(name rules notifications).each do |k|
+      return json_response 400, "invalid_no_#{k}" unless payload.key? k
+    end
     json_response 200, 'new_monitor'
   end
 
