@@ -9,6 +9,7 @@ Unirest.default_header 'Content-Type', 'application/json'
 class Cronitor
   attr_accessor :token, :opts, :code
   API_URL = 'https://cronitor.io/v1'
+  PING_URL = 'https://cronitor.link'
 
   def initialize(token: nil, opts: {}, code: nil)
     @token = token
@@ -30,6 +31,14 @@ class Cronitor
     )
 
     @code = response.body['code'] if valid? response
+  end
+
+  def ping(type, msg = nil)
+    url = "#{PING_URL}/#{code}/#{type}"
+    url += "?msg=#{URI.escape msg}" if type == 'fail' && !msg.nil?
+
+    response = Unirest.get url
+    valid? response
   end
 
   private
