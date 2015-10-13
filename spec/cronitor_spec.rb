@@ -1,16 +1,19 @@
 require 'spec_helper'
 
 RSpec.describe Cronitor do
-  let(:monitor) { Cronitor.new token: token, opts: monitor_options, code: code }
+  let(:token) { '1234' }
+  let(:monitor_options) { nil }
 
   it 'has a version number' do
     expect(Cronitor::VERSION).not_to be nil
   end
 
   context 'sets its config correctly' do
-    let(:token) { '1234' }
     let(:monitor_options) { { name: 'My Fancy Monitor' } }
     let(:code) { 'abcd' }
+    let(:monitor) do
+      Cronitor.new token: token, opts: monitor_options, code: code
+    end
 
     it 'has the specified API token' do
       expect(monitor.token).to eq '1234'
@@ -25,10 +28,92 @@ RSpec.describe Cronitor do
     end
   end
 
-  context 'external request' do
-    it 'tries to make a request w/ Unirest' do
-      response = Unirest.get 'http://cronitor.io/'
-      expect(response.body).to be_an_instance_of String
+  describe '.new' do
+    let(:monitor) { Cronitor.new token: token, opts: monitor_options }
+
+    context 'when a token and all options are provided' do
+      let(:monitor_options) do
+        {
+          name: 'My Fancy Monitor',
+          notifications: { emails: ['test@example.com'] },
+          rules: [{
+            rule_type: 'not_completed_in',
+            duration: 5,
+            time_unit: 'seconds',
+            human_readable: 'Has not received a complete ping in over 5 minutes'
+          }],
+          note: 'A human-friendly description of this monitor'
+        }
+      end
+
+      it 'creates a monitor' do
+        expect(monitor.code).to eq 'abcd'
+      end
+    end
+
+    context 'when token is missing' do
+      let(:token) { nil }
+
+      it 'raises Cronitor::Error exception' do
+        expect { monitor }.to raise_error(
+          Cronitor::Error,
+          'Missing Cronitor API token')
+      end
+    end
+
+    context 'when name option is missing' do
+      let(:monitor_options) do
+        {
+          notifications: { emails: ['noone@example.com'] },
+          rules: [{
+            rule_type: 'not_run_in',
+            duration: 5,
+            time_unit: 'seconds',
+            human_readable: 'rule_type duration time_unit'
+          }]
+        }
+      end
+
+      it 'raises Cronitor::Error exception' do
+        expect { monitor }.to raise_error(
+          Cronitor::Error,
+          'name: This field is required.')
+      end
+    end
+
+    context 'when notifications are missing' do
+      let(:monitor_options) do
+        {
+          name: 'My Fancy Monitor',
+          rules: [{
+            rule_type: 'not_run_in',
+            duration: 5,
+            time_unit: 'seconds',
+            human_readable: 'rule_type duration time_unit'
+          }]
+        }
+      end
+
+      it 'raises Cronitor::Error exception' do
+        expect { monitor }.to raise_error(
+          Cronitor::Error,
+          'notifications: This field is required.')
+      end
+    end
+
+    context 'when rules are missing' do
+      let(:monitor_options) do
+        {
+          name: 'My Fancy Monitor',
+          notifications: { emails: ['noone@example.com'] }
+        }
+      end
+
+      it 'raises Cronitor::Error exception' do
+        expect { monitor }.to raise_error(
+          Cronitor::Error,
+          'rules: This field is required.')
+      end
     end
   end
 end

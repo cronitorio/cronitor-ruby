@@ -1,0 +1,28 @@
+{
+  "code": "abcd",
+  "initialized": true,
+  "disabled": false,
+  "is_paused": false,
+  "is_passing": true,
+  "last_run_at": "1 second ago",
+  "name": "My Fancy Monitor",
+  "notifications": {
+    "phones": [],
+    "webhooks": [],
+    "pagerduty": [],
+    "emails": [
+      "test@example.com"
+    ],
+    "slack": []
+  },
+  "rules": {
+    "6141": {
+      "rule_type": "not_completed_in",
+      "duration": 5,
+      "human_readable": "Has not received a complete ping in over 5 minutes",
+      "time_unit": "minutes",
+      "hours_to_followup_alert": 4
+    }
+  },
+  "note": "A human-friendly description of this monitor"
+}
