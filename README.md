@@ -1,5 +1,8 @@
 # Cronitor
 
+[![Travis](https://img.shields.io/travis/evertrue/cronitor.svg)](https://github.com/evertrue/cronitor)
+[![Gem Version](https://badge.fury.io/rb/cronitor.svg)](https://badge.fury.io/rb/cronitor)
+
 [Cronitor](https://cronitor.io/) is a service for heartbeat-style monitoring of just about anything that can send an HTTP request.
 
 This gem provides a simple abstraction for the creation and pinging of a Cronitor monitor. For a better understanding of the API this gem talks to, please see [How Cronitor Works](https://cronitor.io/help/how-cronitor-works).
