@@ -16,9 +16,12 @@ class Cronitor
     @opts = opts
     @code = code
 
-    # TODO Update this to allow for tokenless usage w/ a code for an already
-    # created monitor
-    fail Cronitor::Error, 'Missing Cronitor API token' if token.nil?
+    if token.nil? && code.nil?
+      fail(
+        Cronitor::Error,
+        'Either a Cronitor API token or an existing monitor code must be ' \
+        'provided')
+    end
 
     create if code.nil?
   end

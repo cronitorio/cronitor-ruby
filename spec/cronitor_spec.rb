@@ -51,13 +51,22 @@ RSpec.describe Cronitor do
       end
     end
 
-    context 'when token is missing' do
+    context 'when a code for a pre-existing monitor is provided' do
+      let(:monitor) { Cronitor.new code: 'efgh' }
+
+      it 'uses the existing monitor' do
+        expect(monitor.code).to eq 'efgh'
+      end
+    end
+
+    context 'when token and code are missing' do
       let(:token) { nil }
 
       it 'raises Cronitor::Error exception' do
         expect { monitor }.to raise_error(
           Cronitor::Error,
-          'Missing Cronitor API token')
+          'Either a Cronitor API token or an existing monitor code must be ' \
+          'provided')
       end
     end
 
