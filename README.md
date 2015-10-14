@@ -33,22 +33,22 @@ A Cronitor monitor (hereafter referred to only as a monitor for brevity) is crea
 require 'cronitor'
 
 monitor_options = {
-    name: 'My Fancy Monitor',
-    notifications: {
-        emails: ['test@example.com'],
-        slack: [],
-        pagerduty: [],
-        phones: [],
-        webhooks: []
-    },
-    rules: [
-        {
-            rule_type: 'not_run_in',
-            duration: 5
-            time_unit: 'seconds'
-        }
-    ],
-    note: 'A human-friendly description of this monitor'
+  name: 'My Fancy Monitor',
+  notifications: {
+    emails: ['test@example.com'],
+    slack: [],
+    pagerduty: [],
+    phones: [],
+    webhooks: []
+  },
+  rules: [
+    {
+      rule_type: 'not_run_in',
+      duration: 5
+      rime_unit: 'seconds'
+    }
+  ],
+  note: 'A human-friendly description of this monitor'
 }
 my_monitor = Cronitor.new token: 'api_token', opts: monitor_options
 ```
