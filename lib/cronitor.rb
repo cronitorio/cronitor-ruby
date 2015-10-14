@@ -16,14 +16,14 @@ class Cronitor
     @opts = opts
     @code = code
 
-    exists? opts[:name] if opts && opts.key?(:name)
-
     if token.nil? && @code.nil?
       fail(
         Cronitor::Error,
         'Either a Cronitor API token or an existing monitor code must be ' \
         'provided')
     end
+
+    exists? opts[:name] if opts && opts.key?(:name)
 
     create if @code.nil?
   end
