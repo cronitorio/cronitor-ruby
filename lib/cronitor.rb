@@ -24,6 +24,7 @@ class Cronitor
     end
 
     exists? opts[:name] if opts && opts.key?(:name)
+    human_readable opts[:rules] if opts && opts.key?(:rules)
 
     create if @code.nil?
   end
@@ -56,6 +57,15 @@ class Cronitor
 
     response = Unirest.get url
     valid? response
+  end
+
+  def human_readable(rules)
+    rules.each do |rule|
+      unless rule[:human_readable]
+        rule[:human_readable] = "#{rule[:rule_type]} #{rule[:duration]} " \
+                                "#{rule[:time_unit]}"
+      end
+    end
   end
 
   private
