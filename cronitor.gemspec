@@ -24,4 +24,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'pry', '~> 0.10'
   spec.add_development_dependency 'webmock', '~> 1.21'
   spec.add_development_dependency 'sinatra', '~> 1.4'
+  spec.add_development_dependency 'bump', '~> 0.1'
 end
