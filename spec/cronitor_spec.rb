@@ -46,8 +46,18 @@ RSpec.describe Cronitor do
         }
       end
 
-      it 'creates a monitor' do
-        expect(monitor.code).to eq 'abcd'
+      context 'when the monitor does not exist' do
+        it 'creates a monitor' do
+          expect(monitor.code).to eq 'abcd'
+        end
+      end
+
+      context 'when the monitor already exists' do
+        before { monitor_options[:name] = 'Test Cronitor' }
+
+        it "uses the existing monitor's code" do
+          expect(monitor.code).to eq 'efgh'
+        end
       end
     end
 

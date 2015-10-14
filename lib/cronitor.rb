@@ -16,6 +16,8 @@ class Cronitor
     @opts = opts
     @code = code
 
+    exists? opts[:name] if opts && opts.key?(:name)
+
     if token.nil? && @code.nil?
       fail(
         Cronitor::Error,
@@ -34,6 +36,18 @@ class Cronitor
     )
 
     @code = response.body['code'] if valid? response
+  end
+
+  def exists?(name)
+    response = Unirest.get(
+      "#{API_URL}/monitors/#{URI.escape name}",
+      auth: { user: token }
+    )
+    return false unless response.code == 200
+
+    @code = response.body['code']
+
+    true
   end
 
   def ping(type, msg = nil)
