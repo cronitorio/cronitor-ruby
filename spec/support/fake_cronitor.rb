@@ -3,7 +3,7 @@ require 'sinatra/base'
 class FakeCronitor < Sinatra::Base
   get '/v1/monitors/:id' do
     if ['abcd', 'Test Cronitor'].include? params['id']
-      json_response 200, 'existing_monitor'
+      return json_response 200, 'existing_monitor'
     end
 
     json_response 404
