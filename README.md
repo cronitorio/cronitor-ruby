@@ -53,6 +53,20 @@ monitor_options = {
 my_monitor = Cronitor.new token: 'api_token', opts: monitor_options
 ```
 
+You may optionally specify a `:human_readable` value for your rule(s), otherwise one will be crafted for you:
+
+```ruby
+monitor_options = {
+  rules: [
+    {
+      rule_type: 'not_run_in',
+      duration: 5
+      time_unit: 'seconds',
+      human_readable: 'not_run_in 5 seconds'
+    }
+  ],
+```
+
 ### Pinging a Monitor
 
 Once you’ve created a monitor, you can continue to use the existing instance of the object to ping the monitor that your task status: `run`, `complete`, or `fail`.
