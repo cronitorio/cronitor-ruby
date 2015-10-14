@@ -51,6 +51,18 @@ class Cronitor
     true
   end
 
+  def run
+    ping 'run'
+  end
+
+  def complete
+    ping 'complete'
+  end
+
+  def fail(msg = nil)
+    ping 'fail', msg
+  end
+
   def ping(type, msg = nil)
     url = "#{PING_URL}/#{code}/#{type}"
     url += "?msg=#{URI.escape msg}" if type == 'fail' && !msg.nil?
