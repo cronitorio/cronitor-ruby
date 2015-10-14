@@ -35,7 +35,7 @@ require 'cronitor'
 monitor_options = {
     name: 'My Fancy Monitor',
     notifications: {
-        emails: [],
+        emails: ['test@example.com'],
         slack: [],
         pagerduty: [],
         phones: [],
