@@ -72,9 +72,9 @@ monitor_options = {
 Once you’ve created a monitor, you can continue to use the existing instance of the object to ping the monitor that your task status: `run`, `complete`, or `fail`.
 
 ```ruby
-my_monitor.run
-my_monitor.complete
-my_monitor.fail 'A short description of the failure'
+my_monitor.ping 'run'
+my_monitor.ping 'complete'
+my_monitor.ping 'fail', 'A short description of the failure'
 ```
 
 ### Pinging a monitor when you have a Cronitor code
