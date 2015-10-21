@@ -41,7 +41,7 @@ class Cronitor
 
   def exists?(name)
     response = Unirest.get(
-      "#{API_URL}/monitors/#{URI.escape name}",
+      "#{API_URL}/monitors/#{URI.escape(name).gsub('[', '%5B').gsub(']', '%5D')}",
       auth: { user: token }
     )
     return false unless response.code == 200
