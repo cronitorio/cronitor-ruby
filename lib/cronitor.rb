@@ -2,6 +2,7 @@ require 'cronitor/version'
 require 'cronitor/error'
 require 'net/http'
 require 'unirest'
+require 'hashie'
 
 Unirest.default_header 'Accept', 'application/json'
 Unirest.default_header 'Content-Type', 'application/json'
