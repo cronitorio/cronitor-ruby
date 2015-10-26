@@ -20,7 +20,8 @@ class Cronitor
       fail(
         Cronitor::Error,
         'Either a Cronitor API token or an existing monitor code must be ' \
-        'provided')
+        'provided'
+      )
     end
 
     exists? opts[:name] if opts && opts.key?(:name)
