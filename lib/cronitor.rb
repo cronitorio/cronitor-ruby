@@ -25,6 +25,7 @@ class Cronitor
     end
 
     if @opts
+      Hashie.symbolize_keys! @opts
       exists? @opts[:name] if @opts.key? :name
       human_readable @opts[:rules] if @opts.key? :rules
     end
