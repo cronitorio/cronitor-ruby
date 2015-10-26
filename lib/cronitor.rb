@@ -24,8 +24,10 @@ class Cronitor
       )
     end
 
-    exists? opts[:name] if opts && opts.key?(:name)
-    human_readable opts[:rules] if opts && opts.key?(:rules)
+    if @opts
+      exists? @opts[:name] if @opts.key? :name
+      human_readable @opts[:rules] if @opts.key? :rules
+    end
 
     create if @code.nil?
   end
