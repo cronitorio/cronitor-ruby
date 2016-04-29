@@ -9,7 +9,7 @@ RSpec.describe Cronitor do
   end
 
   context 'sets its config correctly' do
-    let(:monitor_options) { { name: 'My Fancy Monitor' } }
+    let(:monitor_options) { { 'name' => 'My Fancy Monitor' } }
     let(:code) { 'abcd' }
     let(:monitor) do
       Cronitor.new token: token, opts: monitor_options, code: code
@@ -20,7 +20,7 @@ RSpec.describe Cronitor do
     end
 
     it 'has the specified options' do
-      expect(monitor.opts[:name]).to eq 'My Fancy Monitor'
+      expect(monitor.opts['name']).to eq 'My Fancy Monitor'
     end
 
     it 'has the specified code' do
@@ -34,31 +34,31 @@ RSpec.describe Cronitor do
     context 'when a token and all options are provided' do
       let(:monitor_options) do
         {
-          name: 'My Fancy Monitor',
-          notifications: { emails: ['test@example.com'] },
-          rules: [{
-            rule_type: 'not_completed_in',
-            duration: 5,
-            time_unit: 'seconds'
+          'name'          => 'My Fancy Monitor',
+          'notifications' => { 'emails' => ['test@example.com'] },
+          'rules'         => [{
+            'rule_type' => 'not_completed_in',
+            'duration'  => 5,
+            'time_unit' => 'seconds'
           }],
-          note: 'A human-friendly description of this monitor'
+          'note'          => 'A human-friendly description of this monitor'
         }
       end
 
       context 'when a human readable rule is not provided' do
         it 'sets a human readable rule' do
-          expect(monitor.opts[:rules].first[:human_readable]).to(
+          expect(monitor.opts['rules'].first['human_readable']).to(
             eq 'not_completed_in 5 seconds')
         end
       end
 
       context 'when a human readable rule is provided' do
         before do
-          monitor_options[:rules].first[:human_readable] = 'A human rule'
+          monitor_options['rules'].first['human_readable'] = 'A human rule'
         end
 
         it 'sets a human readable rule' do
-          expect(monitor.opts[:rules].first[:human_readable]).to(
+          expect(monitor.opts['rules'].first['human_readable']).to(
             eq 'A human rule')
         end
       end
@@ -70,7 +70,7 @@ RSpec.describe Cronitor do
       end
 
       context 'when the monitor already exists' do
-        before { monitor_options[:name] = 'Test Cronitor' }
+        before { monitor_options['name'] = 'Test Cronitor' }
 
         it "uses the existing monitor's code" do
           expect(monitor.code).to eq 'efgh'
@@ -100,11 +100,11 @@ RSpec.describe Cronitor do
     context 'when name option is missing' do
       let(:monitor_options) do
         {
-          notifications: { emails: ['noone@example.com'] },
-          rules: [{
-            rule_type: 'not_run_in',
-            duration: 5,
-            time_unit: 'seconds'
+          'notifications' => { emails: ['noone@example.com'] },
+          'rules'         => [{
+            'rule_type' => 'not_run_in',
+            'duration'  => 5,
+            'time_unit' => 'seconds'
           }]
         }
       end
@@ -119,11 +119,11 @@ RSpec.describe Cronitor do
     context 'when notifications are missing' do
       let(:monitor_options) do
         {
-          name: 'My Fancy Monitor',
-          rules: [{
-            rule_type: 'not_run_in',
-            duration: 5,
-            time_unit: 'seconds'
+          'name'  => 'My Fancy Monitor',
+          'rules' => [{
+            'rule_type' => 'not_run_in',
+            'duration'  => 5,
+            'time_unit' => 'seconds'
           }]
         }
       end
@@ -138,8 +138,8 @@ RSpec.describe Cronitor do
     context 'when rules are missing' do
       let(:monitor_options) do
         {
-          name: 'My Fancy Monitor',
-          notifications: { emails: ['noone@example.com'] }
+          'name'          => 'My Fancy Monitor',
+          'notifications' => { 'emails' => ['noone@example.com'] }
         }
       end
 
@@ -155,14 +155,14 @@ RSpec.describe Cronitor do
     let(:monitor) { Cronitor.new token: token, opts: monitor_options }
     let(:monitor_options) do
       {
-        name: 'My Fancy Monitor',
-        notifications: { emails: ['test@example.com'] },
-        rules: [{
-          rule_type: 'not_completed_in',
-          duration: 5,
-          time_unit: 'seconds'
+        'name'          => 'My Fancy Monitor',
+        'notifications' => { 'emails' => ['test@example.com'] },
+        'rules'         => [{
+          'rule_type' => 'not_completed_in',
+          'duration'  => 5,
+          'time_unit' => 'seconds'
         }],
-        note: 'A human-friendly description of this monitor'
+        'note'          => 'A human-friendly description of this monitor'
       }
     end
 

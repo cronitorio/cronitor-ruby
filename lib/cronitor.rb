@@ -2,7 +2,6 @@ require 'cronitor/version'
 require 'cronitor/error'
 require 'net/http'
 require 'unirest'
-require 'hashie'
 
 Unirest.default_header 'Accept', 'application/json'
 Unirest.default_header 'Content-Type', 'application/json'
@@ -26,9 +25,8 @@ class Cronitor
     end
 
     if @opts
-      Hashie.symbolize_keys! @opts
-      exists? @opts[:name] if @opts.key? :name
-      human_readable @opts[:rules] if @opts.key? :rules
+      exists? @opts['name'] if @opts.key? 'name'
+      human_readable @opts['rules'] if @opts.key? 'rules'
     end
 
     create if @code.nil?
@@ -66,9 +64,9 @@ class Cronitor
 
   def human_readable(rules)
     rules.each do |rule|
-      unless rule[:human_readable]
-        rule[:human_readable] = "#{rule[:rule_type]} #{rule[:duration]} " \
-                                "#{rule[:time_unit]}"
+      unless rule['human_readable']
+        rule['human_readable'] = "#{rule['rule_type']} #{rule['duration']} " \
+                                 "#{rule['time_unit']}"
       end
     end
   end
