@@ -9,8 +9,8 @@ Unirest.default_header 'Content-Type', 'application/json'
 
 class Cronitor
   attr_accessor :token, :opts, :code
-  API_URL = 'https://cronitor.io/v1'
-  PING_URL = 'https://cronitor.link'
+  API_URL = 'https://cronitor.io/v1'.freeze
+  PING_URL = 'https://cronitor.link'.freeze
 
   def initialize(token: nil, opts: {}, code: nil)
     @token = token
