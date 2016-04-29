@@ -18,7 +18,7 @@ class Cronitor
     @code = code
 
     if @token.nil? && @code.nil?
-      fail(
+      raise(
         Cronitor::Error,
         'Either a Cronitor API token or an existing monitor code must be ' \
         'provided'
@@ -79,7 +79,7 @@ class Cronitor
     return true if [200, 201].include? response.code
     server_error? response
 
-    fail Cronitor::Error, error_msg(response.body)
+    raise Cronitor::Error, error_msg(response.body)
   end
 
   def error_msg(body, msg = [])
@@ -99,7 +99,7 @@ class Cronitor
   def server_error?(response)
     return unless [301, 302, 404, 500, 502, 503, 504].include? response.code
 
-    fail(
+    raise(
       Cronitor::Error,
       "Something else has gone awry. HTTP status: #{response.code}"
     )
