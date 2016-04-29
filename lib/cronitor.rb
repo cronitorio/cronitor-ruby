@@ -25,6 +25,8 @@ class Cronitor
       )
     end
 
+    @opts = load_conf @opts if @token && @opts.is_a?(String) && @code.nil
+
     if @opts
       Hashie.symbolize_keys! @opts
       exists? @opts[:name] if @opts.key? :name
@@ -32,6 +34,10 @@ class Cronitor
     end
 
     create if @code.nil?
+  end
+
+  def load_conf(conf_file = nil)
+    YAML.load_file(conf_file || '/etc/cronitor.yml')
   end
 
   def create
