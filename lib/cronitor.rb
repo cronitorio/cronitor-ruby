@@ -4,9 +4,6 @@ require 'net/http'
 require 'unirest'
 require 'hashie'
 
-Unirest.default_header 'Accept', 'application/json'
-Unirest.default_header 'Content-Type', 'application/json'
-
 class Cronitor
   attr_accessor :token, :opts, :code
   API_URL = 'https://cronitor.io/v1'.freeze
@@ -37,6 +34,7 @@ class Cronitor
   def create
     response = Unirest.post(
       "#{API_URL}/monitors",
+      headers: default_headers.merge 'Content-Type' => 'application/json',
       auth: { user: token },
       parameters: opts.to_json
     )
@@ -47,6 +45,7 @@ class Cronitor
   def exists?(name)
     response = Unirest.get(
       "#{API_URL}/monitors/#{URI.escape(name).gsub('[', '%5B').gsub(']', '%5D')}",
+      headers: default_headers,
       auth: { user: token }
     )
     return false unless response.code == 200
@@ -103,5 +102,9 @@ class Cronitor
       Cronitor::Error,
       "Something else has gone awry. HTTP status: #{response.code}"
     )
+  end
+
+  def default_headers
+    { 'Accept' => 'application/json' }
   end
 end
