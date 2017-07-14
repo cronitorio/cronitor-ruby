@@ -6,7 +6,7 @@ WebMock.disable_net_connect! allow_localhost: true
 
 RSpec.configure do |config|
   config.before(:each) do
-    stub_request(:any, /cronitor.(io|link)/).to_rack FakeCronitor
+    stub_request(:any, /cronitor.(io|link|ping)/).to_rack FakeCronitor
   end
 
   config.expect_with :rspec do |expectations|

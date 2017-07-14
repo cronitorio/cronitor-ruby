@@ -1,6 +1,10 @@
 require 'sinatra/base'
 
 class FakeCronitor < Sinatra::Base
+  class << self
+    attr_accessor :requests
+  end
+
   get '/v1/monitors/:id' do
     if ['efgh', 'Test Cronitor'].include? params['id']
       return json_response 200, 'existing_monitor'
@@ -12,16 +16,22 @@ class FakeCronitor < Sinatra::Base
   post '/v1/monitors' do
     payload = JSON.parse request.body.read
     # Check that we have the necessary payload values very simply
-    %w(name rules notifications).each do |k|
+    %w[name rules notifications].each do |k|
       return json_response 400, "invalid_no_#{k}" unless payload.key? k
     end
     json_response 200, 'new_monitor'
   end
 
-  %w(run complete fail).each do |ping|
+  %w[run complete fail].each do |ping|
     get "/abcd/#{ping}" do
-      200
+      content_type :json
+      status 200
+      params.to_json
     end
+  end
+
+  before do
+    self.class.requests = [self.class.requests, request]
   end
 
   private
