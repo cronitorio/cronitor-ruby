@@ -29,6 +29,9 @@ class FakeCronitor < Sinatra::Base
   end
 
   before do
+    # Storing requests here in a class instance variable so that the rspec
+    # tests can examine the request stack, specifically that the requests
+    # to the cronitor API contain the correct paramaters.
     self.class.requests = [self.class.requests, request]
   end
 

@@ -57,7 +57,7 @@ class Cronitor
 
   def ping(type, msg = nil)
     url = "#{PING_URL}/#{code}/#{type}"
-    url += "?msg=#{URI.escape msg}" if ['run', 'complete', 'fail'].include?(type) && !msg.nil?
+    url += "?msg=#{URI.escape msg}" if %w(run complete fail).include?(type) && !msg.nil?
 
     response = Unirest.get url
     valid? response
