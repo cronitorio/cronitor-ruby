@@ -34,7 +34,7 @@ class Cronitor
   def create
     response = Unirest.post(
       "#{API_URL}/monitors",
-      headers: default_headers.merge('Content-Type': 'application/json'),
+      headers: default_headers.merge('Content-Type' => 'application/json'),
       auth: { user: token },
       parameters: opts.to_json
     )
@@ -105,6 +105,6 @@ class Cronitor
   end
 
   def default_headers
-    { 'Accept': 'application/json' }
+    { 'Accept' => 'application/json' }
   end
 end
