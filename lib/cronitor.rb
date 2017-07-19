@@ -34,7 +34,7 @@ class Cronitor
   def create
     response = Unirest.post(
       "#{API_URL}/monitors",
-      headers: default_headers.merge 'Content-Type' => 'application/json',
+      headers: default_headers.merge('Content-Type' => 'application/json'),
       auth: { user: token },
       parameters: opts.to_json
     )
@@ -57,7 +57,7 @@ class Cronitor
 
   def ping(type, msg = nil)
     url = "#{PING_URL}/#{code}/#{type}"
-    url += "?msg=#{URI.escape msg}" if type == 'fail' && !msg.nil?
+    url += "?msg=#{URI.escape msg}" if %w(run complete fail).include?(type) && !msg.nil?
 
     response = Unirest.get url
     valid? response

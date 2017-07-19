@@ -1,6 +1,10 @@
 require 'sinatra/base'
 
 class FakeCronitor < Sinatra::Base
+  class << self
+    attr_accessor :requests
+  end
+
   get '/v1/monitors/:id' do
     if ['efgh', 'Test Cronitor'].include? params['id']
       return json_response 200, 'existing_monitor'
@@ -22,6 +26,13 @@ class FakeCronitor < Sinatra::Base
     get "/abcd/#{ping}" do
       200
     end
+  end
+
+  before do
+    # Storing requests here in a class instance variable so that the rspec
+    # tests can examine the request stack, specifically that the requests
+    # to the cronitor API contain the correct paramaters.
+    self.class.requests = [self.class.requests, request]
   end
 
   private
