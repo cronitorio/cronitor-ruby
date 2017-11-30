@@ -9,7 +9,7 @@ class Cronitor
   API_URL = 'https://cronitor.io/v1'.freeze
   PING_URL = 'https://cronitor.link'.freeze
 
-  def initialize(token: nil, opts: {}, code: nil)
+  def initialize(token: ENV['CRONITOR_TOKEN'], opts: {}, code: nil)
     @token = token
     @opts = opts
     @code = code
