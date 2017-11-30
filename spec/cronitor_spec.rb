@@ -4,6 +4,8 @@ RSpec.describe Cronitor do
   let(:token) { '1234' }
   let(:monitor_options) { nil }
 
+  before(:all) { ENV.delete("CRONITOR_TOKEN") }
+
   it 'has a version number' do
     expect(Cronitor::VERSION).not_to be nil
   end
@@ -43,6 +45,15 @@ RSpec.describe Cronitor do
           }],
           note: 'A human-friendly description of this monitor'
         }
+      end
+
+      context 'with a token in ENV' do
+        before { ENV['CRONITOR_TOKEN'] = token }
+        after { ENV.delete('CRONITOR_TOKEN') }
+
+        it 'uses the token from ENV' do
+          expect(Cronitor.new(opts: {name: 'Test Cronitor'}).token).to eql(token)
+        end
       end
 
       context 'when a human readable rule is not provided' do
