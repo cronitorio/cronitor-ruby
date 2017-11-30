@@ -2,7 +2,6 @@ require 'cronitor/version'
 require 'cronitor/error'
 require 'net/http'
 require 'unirest'
-require 'hashie'
 
 class Cronitor
   attr_accessor :token, :opts, :code
@@ -23,7 +22,7 @@ class Cronitor
     end
 
     if @opts
-      Hashie.symbolize_keys! @opts
+      @opts = symbolize_keys @opts
       exists? @opts[:name] if @opts.key? :name
       human_readable @opts[:rules] if @opts.key? :rules
     end
@@ -106,5 +105,9 @@ class Cronitor
 
   def default_headers
     { 'Accept' => 'application/json' }
+  end
+
+  def symbolize_keys(hash)
+    hash.each_with_object({}) { |(k, v), h| h[k.to_sym] = v.is_a?(Hash) ? symbolize_keys(v) : v }
   end
 end
