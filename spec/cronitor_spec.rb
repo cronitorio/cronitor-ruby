@@ -4,7 +4,7 @@ RSpec.describe Cronitor do
   let(:token) { '1234' }
   let(:monitor_options) { nil }
 
-  before(:all) { ENV.delete("CRONITOR_TOKEN") }
+  before(:all) { ENV.delete('CRONITOR_TOKEN') }
 
   it 'has a version number' do
     expect(Cronitor::VERSION).not_to be nil
@@ -52,14 +52,15 @@ RSpec.describe Cronitor do
         after { ENV.delete('CRONITOR_TOKEN') }
 
         it 'uses the token from ENV' do
-          expect(Cronitor.new(opts: {name: 'Test Cronitor'}).token).to eql(token)
+          expect(Cronitor.new(opts: { name: 'Test Cronitor' }).token).to eql(token)
         end
       end
 
       context 'when a human readable rule is not provided' do
         it 'sets a human readable rule' do
           expect(monitor.opts[:rules].first[:human_readable]).to(
-            eq 'not_completed_in 5 seconds')
+            eq 'not_completed_in 5 seconds'
+          )
         end
       end
 
@@ -70,7 +71,8 @@ RSpec.describe Cronitor do
 
         it 'sets a human readable rule' do
           expect(monitor.opts[:rules].first[:human_readable]).to(
-            eq 'A human rule')
+            eq 'A human rule'
+          )
         end
       end
 
@@ -104,7 +106,8 @@ RSpec.describe Cronitor do
         expect { monitor }.to raise_error(
           Cronitor::Error,
           'Either a Cronitor API token or an existing monitor code must be ' \
-          'provided')
+          'provided'
+        )
       end
     end
 
@@ -123,7 +126,8 @@ RSpec.describe Cronitor do
       it 'raises Cronitor::Error exception' do
         expect { monitor }.to raise_error(
           Cronitor::Error,
-          'name: This field is required.')
+          'name: This field is required.'
+        )
       end
     end
 
@@ -142,7 +146,8 @@ RSpec.describe Cronitor do
       it 'raises Cronitor::Error exception' do
         expect { monitor }.to raise_error(
           Cronitor::Error,
-          'notifications: This field is required.')
+          'notifications: This field is required.'
+        )
       end
     end
 
@@ -157,7 +162,8 @@ RSpec.describe Cronitor do
       it 'raises Cronitor::Error exception' do
         expect { monitor }.to raise_error(
           Cronitor::Error,
-          'rules: This field is required.')
+          'rules: This field is required.'
+        )
       end
     end
   end
@@ -177,7 +183,7 @@ RSpec.describe Cronitor do
       }
     end
 
-    %w(run complete fail).each do |ping_type|
+    %w[run complete fail].each do |ping_type|
       context 'with a valid monitor' do
         describe ping_type do
           it 'notifies Cronitor' do
@@ -197,7 +203,8 @@ RSpec.describe Cronitor do
           it 'raises Cronitor::Error exception' do
             expect { monitor.ping(ping_type) }.to raise_error(
               Cronitor::Error,
-              'Something else has gone awry. HTTP status: 404')
+              'Something else has gone awry. HTTP status: 404'
+            )
           end
         end
       end

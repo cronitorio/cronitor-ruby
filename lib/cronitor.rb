@@ -123,6 +123,8 @@ class Cronitor
   end
 
   def symbolize_keys(hash)
-    hash.each_with_object({}) { |(k, v), h| h[k.to_sym] = v.is_a?(Hash) ? symbolize_keys(v) : v }
+    hash.each_with_object({}) do |(k, v), h|
+      h[k.to_sym] = v.is_a?(Hash) ? symbolize_keys(v) : v
+    end
   end
 end
