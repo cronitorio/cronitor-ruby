@@ -1,7 +1,8 @@
 require 'cronitor/version'
 require 'cronitor/error'
+require 'json'
 require 'net/http'
-require 'unirest'
+require 'uri'
 
 class Cronitor
   attr_accessor :token, :opts, :code
@@ -31,34 +32,52 @@ class Cronitor
   end
 
   def create
-    response = Unirest.post(
-      "#{API_URL}/monitors",
-      headers: default_headers.merge('Content-Type' => 'application/json'),
-      auth: { user: token },
-      parameters: opts.to_json
-    )
+    uri = URI.parse "#{API_URL}/monitors"
 
-    @code = response.body['code'] if valid? response
+    http = Net::HTTP.new uri.host, uri.port
+    http.use_ssl = uri.scheme == 'https'
+
+    request = Net::HTTP::Post.new uri.path, default_headers
+    request.basic_auth token, nil
+    request.content_type = 'application/json'
+    request.body = JSON.generate opts
+
+    response = http.request request
+
+    @code = JSON.parse(response.body).fetch 'code' if valid? response
   end
 
   def exists?(name)
-    response = Unirest.get(
-      "#{API_URL}/monitors/#{URI.escape(name).gsub('[', '%5B').gsub(']', '%5D')}",
-      headers: default_headers,
-      auth: { user: token }
-    )
-    return false unless response.code == 200
+    uri = URI.parse "#{API_URL}/monitors/#{URI.escape name}"
 
-    @code = response.body['code']
+    http = Net::HTTP.new uri.host, uri.port
+    http.use_ssl = uri.scheme == 'https'
+
+    request = Net::HTTP::Get.new uri.path, default_headers
+    request.basic_auth token, nil
+
+    response = http.request request
+
+    return false unless response.is_a? Net::HTTPSuccess
+
+    @code = JSON.parse(response.body).fetch 'code'
 
     true
   end
 
   def ping(type, msg = nil)
-    url = "#{PING_URL}/#{code}/#{type}"
-    url += "?msg=#{URI.escape msg}" if %w(run complete fail).include?(type) && !msg.nil?
+    uri = URI.parse "#{PING_URL}/#{URI.escape code}/#{URI.escape type}"
+    if %w[run complete fail].include?(type) && !msg.nil?
+      uri.query = URI.encode_www_form 'msg' => msg
+    end
 
-    response = Unirest.get url
+    http = Net::HTTP.new uri.host, uri.port
+    http.use_ssl = uri.scheme == 'https'
+
+    request = Net::HTTP::Get.new uri, default_headers
+
+    response = http.request request
+
     valid? response
   end
 
@@ -74,10 +93,15 @@ class Cronitor
   private
 
   def valid?(response)
-    return true if [200, 201].include? response.code
-    server_error? response
+    return true if response.is_a? Net::HTTPSuccess
 
-    raise Cronitor::Error, error_msg(response.body)
+    msg = if response.content_type.match? 'json'
+            error_msg JSON.parse(response.body)
+          else
+            "Something else has gone awry. HTTP status: #{response.code}"
+          end
+
+    raise Cronitor::Error, msg
   end
 
   def error_msg(body, msg = [])
@@ -92,15 +116,6 @@ class Cronitor
     end
 
     msg.join ' '
-  end
-
-  def server_error?(response)
-    return unless [301, 302, 404, 500, 502, 503, 504].include? response.code
-
-    raise(
-      Cronitor::Error,
-      "Something else has gone awry. HTTP status: #{response.code}"
-    )
   end
 
   def default_headers

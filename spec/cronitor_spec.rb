@@ -185,7 +185,7 @@ RSpec.describe Cronitor do
           end
           it 'passes the message to Cronitor' do
             monitor.ping(ping_type, 'your message here')
-            expect(FakeCronitor.requests.last.params).to include('msg' => 'your message here')
+            expect(FakeCronitor.last_request.params).to include('msg' => 'your message here')
           end
         end
       end
