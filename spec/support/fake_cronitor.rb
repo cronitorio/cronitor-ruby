@@ -2,7 +2,7 @@ require 'sinatra/base'
 
 class FakeCronitor < Sinatra::Base
   class << self
-    attr_accessor :requests
+    attr_accessor :last_request
   end
 
   get '/v1/monitors/:id' do
@@ -29,10 +29,8 @@ class FakeCronitor < Sinatra::Base
   end
 
   before do
-    # Storing requests here in a class instance variable so that the rspec
-    # tests can examine the request stack, specifically that the requests
-    # to the cronitor API contain the correct paramaters.
-    self.class.requests = [self.class.requests, request]
+    # Store last request here so rspec an inspect request, specifically for ping msg param
+    self.class.last_request = request
   end
 
   private
