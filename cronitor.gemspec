@@ -26,6 +26,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec', '~> 3.3'
   spec.add_development_dependency 'pry', '~> 0.10'
   spec.add_development_dependency 'webmock', '~> 2.3', '>= 2.3.1'
-  spec.add_development_dependency 'sinatra', '~> 1.4'
+  spec.add_development_dependency 'sinatra', '~> 2.0'
   spec.add_development_dependency 'bump', '~> 0.1'
 end
