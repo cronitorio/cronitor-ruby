@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 RSpec.describe Cronitor do
@@ -191,7 +193,9 @@ RSpec.describe Cronitor do
           end
           it 'passes the message to Cronitor' do
             monitor.ping(ping_type, 'your message here')
-            expect(FakeCronitor.last_request.params).to include('msg' => 'your message here')
+            expect(FakeCronitor.last_request.params).to include(
+              'msg' => 'your message here'
+            )
           end
         end
       end

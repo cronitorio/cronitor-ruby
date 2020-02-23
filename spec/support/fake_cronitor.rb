@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'sinatra/base'
 
 class FakeCronitor < Sinatra::Base
@@ -29,7 +31,8 @@ class FakeCronitor < Sinatra::Base
   end
 
   before do
-    # Store last request here so rspec an inspect request, specifically for ping msg param
+    # Store last request here so rspec an inspect request, specifically for ping
+    # msg param
     self.class.last_request = request
   end
 
@@ -39,6 +42,7 @@ class FakeCronitor < Sinatra::Base
     content_type :json
     status response_code
     return '{"detail":"Not found"}' if response_code == 404
+
     File.open("#{File.dirname __FILE__}/fixtures/#{file_name}.json", 'rb').read
   end
 end

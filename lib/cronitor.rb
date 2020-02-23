@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'cronitor/version'
 require 'cronitor/error'
 require 'json'
@@ -6,8 +8,8 @@ require 'uri'
 
 class Cronitor
   attr_accessor :token, :opts, :code
-  API_URL = 'https://cronitor.io/v1'.freeze
-  PING_URL = 'https://cronitor.link'.freeze
+  API_URL = 'https://cronitor.io/v1'
+  PING_URL = 'https://cronitor.link'
 
   def initialize(token: ENV['CRONITOR_TOKEN'], opts: {}, code: nil)
     @token = token
