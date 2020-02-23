@@ -50,6 +50,8 @@ monitor_options = {
   ],
   note: 'A human-friendly description of this monitor'
 }
+
+# The token parameter is optional; if omittted, ENV['CRONITOR_TOKEN'] will be used
 my_monitor = Cronitor.new token: 'api_token', opts: monitor_options
 ```
 
@@ -67,6 +69,10 @@ monitor_options = {
   ],
 ```
 
+### Updating an existing monitor
+
+Currently this gem does not support updating or deleting an existing monitor.
+
 ### Pinging a Monitor
 
 Once you’ve created a monitor, you can continue to use the existing instance of the object to ping the monitor that your task status: `run`, `complete`, or `fail`.
@@ -79,7 +85,9 @@ my_monitor.ping 'fail', 'A short description of the failure'
 
 ### Pinging a monitor when you have a Cronitor code
 
-You may already have the code for a monitor, in which case, the expense of `Cronitor.new` may seem unnecessary (since it makes an HTTP request to check if a monitor exists, and you already know it does).
+You may already have the code for a monitor, in which case, the expense of `Cronitor.create` may seem unnecessary (since it makes an HTTP request to check if a monitor exists, and you already know it does).
+
+Cronitor does not require a token for pinging a monitor unless you have enabled Ping API authentication in your account settings. At the moment, this gem does not support Ping API auth.
 
 In that case:
 
