@@ -5,7 +5,6 @@ require 'cronitor/error'
 require 'json'
 require 'net/http'
 require 'uri'
-require 'cgi'
 
 class Cronitor
   attr_accessor :token, :opts, :code
@@ -51,7 +50,7 @@ class Cronitor
   end
 
   def exists?(name)
-    uri = URI.parse "#{API_URL}/monitors/#{CGI.escape name}"
+    uri = URI.parse "#{API_URL}/monitors/#{URI.escape name}"
 
     http = Net::HTTP.new uri.host, uri.port
     http.use_ssl = uri.scheme == 'https'
@@ -69,7 +68,7 @@ class Cronitor
   end
 
   def ping(type, msg = nil)
-    uri = URI.parse "#{PING_URL}/#{CGI.escape code}/#{CGI.escape type}"
+    uri = URI.parse "#{PING_URL}/#{URI.escape code}/#{URI.escape type}"
     if %w[run complete fail].include?(type) && !msg.nil?
       uri.query = URI.encode_www_form 'msg' => msg
     end

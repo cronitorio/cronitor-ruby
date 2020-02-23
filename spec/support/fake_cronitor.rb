@@ -8,7 +8,7 @@ class FakeCronitor < Sinatra::Base
   end
 
   get '/v1/monitors/:id' do
-    if ['efgh', CGI.escape('Test Cronitor')].include? params['id']
+    if ['efgh', 'Test Cronitor'].include? params['id']
       return json_response 200, 'existing_monitor'
     end
 
