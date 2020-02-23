@@ -2,9 +2,7 @@
 
 require 'cronitor/version'
 require 'cronitor/error'
-require 'json'
 require 'net/http'
-require 'uri'
 
 class Cronitor
   attr_accessor :token, :opts, :code
