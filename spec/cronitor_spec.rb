@@ -58,26 +58,6 @@ RSpec.describe Cronitor do
         end
       end
 
-      context 'when a human readable rule is not provided' do
-        it 'sets a human readable rule' do
-          expect(monitor.opts[:rules].first[:human_readable]).to(
-            eq 'not_completed_in 5 seconds'
-          )
-        end
-      end
-
-      context 'when a human readable rule is provided' do
-        before do
-          monitor_options[:rules].first[:human_readable] = 'A human rule'
-        end
-
-        it 'sets a human readable rule' do
-          expect(monitor.opts[:rules].first[:human_readable]).to(
-            eq 'A human rule'
-          )
-        end
-      end
-
       context 'when the monitor does not exist' do
         it 'creates a monitor' do
           expect(monitor.code).to eq 'abcd'

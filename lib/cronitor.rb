@@ -8,7 +8,7 @@ require 'uri'
 
 class Cronitor
   attr_accessor :token, :opts, :code
-  API_URL = 'https://cronitor.io/v1'
+  API_URL = 'https://cronitor.io/v3'
   PING_URL = 'https://cronitor.link'
 
   def initialize(token: ENV['CRONITOR_TOKEN'], opts: {}, code: nil)
@@ -26,8 +26,14 @@ class Cronitor
 
     if @opts
       @opts = symbolize_keys @opts
+
       exists? @opts[:name] if @opts.key? :name
-      human_readable @opts[:rules] if @opts.key? :rules
+
+      # README: Per Cronitor API v2, we need to specify a type. The "heartbeat"
+      #         type corresponds to what the v1 API offered by default
+      #         We allow other values to be injected, and let the API handle
+      #         any errors.
+      @opts[:type] = 'heartbeat' unless @opts[:type]
     end
 
     create if @code.nil?
@@ -82,15 +88,6 @@ class Cronitor
     response = http.request request
 
     valid? response
-  end
-
-  def human_readable(rules)
-    rules.each do |rule|
-      unless rule[:human_readable]
-        rule[:human_readable] = "#{rule[:rule_type]} #{rule[:duration]} " \
-                                "#{rule[:time_unit]}"
-      end
-    end
   end
 
   private
