@@ -29,11 +29,16 @@ Or install it yourself as:
 
 A Cronitor monitor (hereafter referred to only as a monitor for brevity) is created if it does not already exist, and its ID returned.
 
+Please see the [Cronitor Monitor API docs](https://cronitor.io/docs/monitor-api) for details of all the possible monitor options.
+
+Example of creating a heartbeat monitor:
+
 ```ruby
 require 'cronitor'
 
 monitor_options = {
   name: 'My Fancy Monitor',
+  type: 'heartbeat', # Optional: the gem defaults to this; the other value, 'healthcheck', is not yet supported by this gem
   notifications: {
     emails: ['test@example.com'],
     slack: [],
@@ -43,8 +48,8 @@ monitor_options = {
   },
   rules: [
     {
-      rule_type: 'not_run_in',
-      duration: 5,
+      rule_type: 'run_ping_not_received',
+      value: 5,
       time_unit: 'seconds'
     }
   ],
@@ -53,20 +58,6 @@ monitor_options = {
 
 # The token parameter is optional; if omittted, ENV['CRONITOR_TOKEN'] will be used
 my_monitor = Cronitor.new token: 'api_token', opts: monitor_options
-```
-
-You may optionally specify a `:human_readable` value for your rule(s), otherwise one will be crafted for you:
-
-```ruby
-monitor_options = {
-  rules: [
-    {
-      rule_type: 'not_run_in',
-      duration: 5
-      time_unit: 'seconds',
-      human_readable: 'not_run_in 5 seconds'
-    }
-  ],
 ```
 
 ### Updating an existing monitor

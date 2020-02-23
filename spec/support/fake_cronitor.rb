@@ -7,7 +7,7 @@ class FakeCronitor < Sinatra::Base
     attr_accessor :last_request
   end
 
-  get '/v1/monitors/:id' do
+  get '/v3/monitors/:id' do
     if ['efgh', 'Test Cronitor'].include? params['id']
       return json_response 200, 'existing_monitor'
     end
@@ -15,7 +15,7 @@ class FakeCronitor < Sinatra::Base
     json_response 404
   end
 
-  post '/v1/monitors' do
+  post '/v3/monitors' do
     payload = JSON.parse request.body.read
     # Check that we have the necessary payload values very simply
     %w[name rules notifications].each do |k|

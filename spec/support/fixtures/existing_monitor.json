@@ -1,5 +1,6 @@
 {
   "code": "efgh",
+  "type": "heartbeat",
   "initialized": true,
   "disabled": false,
   "is_paused": false,
@@ -15,14 +16,14 @@
     ],
     "slack": []
   },
-  "rules": {
-    "6141": {
-      "rule_type": "not_completed_in",
+  "rules": [
+    {
+      "rule_type": "complete_ping_not_received",
       "duration": 5,
       "human_readable": "Has not received a complete ping in over 5 minutes",
       "time_unit": "minutes",
       "hours_to_followup_alert": 4
     }
-  },
+  ],
   "note": null
 }
