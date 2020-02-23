@@ -44,8 +44,8 @@ monitor_options = {
   rules: [
     {
       rule_type: 'not_run_in',
-      duration: 5
-      rime_unit: 'seconds'
+      duration: 5,
+      time_unit: 'seconds'
     }
   ],
   note: 'A human-friendly description of this monitor'
