@@ -54,7 +54,7 @@ RSpec.describe Cronitor do
         after { ENV.delete('CRONITOR_TOKEN') }
 
         it 'uses the token from ENV' do
-          expect(Cronitor.new(opts: { name: 'Test Cronitor' }).token).to eql(token)
+          expect(monitor.token).to eql(token)
         end
       end
 
