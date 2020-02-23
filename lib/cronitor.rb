@@ -63,6 +63,7 @@ class Cronitor
     return false unless response.is_a? Net::HTTPSuccess
 
     @code = JSON.parse(response.body).fetch 'code'
+    @opts = JSON.parse(response.body)
 
     true
   end
