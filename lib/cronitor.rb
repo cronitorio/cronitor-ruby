@@ -5,6 +5,7 @@ require 'cronitor/error'
 require 'json'
 require 'net/http'
 require 'uri'
+require 'cgi'
 
 class Cronitor
   attr_accessor :token, :opts, :code
