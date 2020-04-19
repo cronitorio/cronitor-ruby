@@ -44,7 +44,7 @@ end
 
 ```
 # .env
-CRONITOR_TOKEN = 'token'
+CRONITOR_TOKEN: token
 ```
 
 ### Creating a Monitor
