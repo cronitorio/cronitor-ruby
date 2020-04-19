@@ -25,6 +25,28 @@ Or install it yourself as:
 
 ## Usage
 
+
+### Configure
+
+You need to set Cronitor Token in order to create a monitor
+
+#### Using configure
+
+```ruby
+require 'cronitor'
+
+Cronitor.configure do |cronitor|
+  cronitor.default_token = 'token' # default token to be re-used by cronitor
+end
+````
+
+#### Using ENV
+
+```
+# .env
+CRONITOR_TOKEN = 'token'
+```
+
 ### Creating a Monitor
 
 A Cronitor monitor (hereafter referred to only as a monitor for brevity) is created if it does not already exist, and its ID returned.
@@ -56,7 +78,7 @@ monitor_options = {
   note: 'A human-friendly description of this monitor'
 }
 
-# The token parameter is optional; if omittted, ENV['CRONITOR_TOKEN'] will be used
+# The token parameter is optional; if omittted, ENV['CRONITOR_TOKEN'] will be used if not configured
 my_monitor = Cronitor.new token: 'api_token', opts: monitor_options
 ```
 

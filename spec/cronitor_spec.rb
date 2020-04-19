@@ -7,29 +7,39 @@ RSpec.describe Cronitor do
   let(:monitor_options) { nil }
 
   before(:all) { ENV.delete('CRONITOR_TOKEN') }
-  before(:each) { described_class.token = nil }
+  before(:each) { described_class.default_token = nil }
 
-  describe '.token' do
+  describe '.default_token' do
     before do
-      described_class.token = token
       allow_any_instance_of(described_class).to receive(:create)
     end
 
     it 'set token on class' do
-      expect(described_class.token).to eq(token)
+      described_class.default_token = token
+      expect(described_class.default_token).to eq(token)
     end
 
     it 'reuse class token' do
+      described_class.default_token = token
       expect { subject }.not_to raise_error
     end
 
     context 'with no class token' do
-      let(:token) { nil }
-
       it 'raise' do
         expect { subject }.to raise_error Cronitor::Error, 'Either a Cronitor API token or an existing monitor code must be ' \
           'provided'
       end
+    end
+  end
+
+  describe '.configure' do
+    before do
+      allow_any_instance_of(described_class).to receive(:create)
+    end
+
+    it 'configure' do
+      described_class.configure { |cronitor| cronitor.default_token = token } 
+      expect(described_class.default_token).to eq(token)
     end
   end
 
@@ -45,7 +55,7 @@ RSpec.describe Cronitor do
     end
 
     it 'has the specified API token' do
-      expect(monitor.class.token).to eq '1234'
+      expect(monitor.token).to eq '1234'
     end
 
     it 'has the specified options' do
@@ -79,7 +89,7 @@ RSpec.describe Cronitor do
         after { ENV.delete('CRONITOR_TOKEN') }
 
         it 'uses the token from ENV' do
-          expect(monitor.class.token).to eql(token)
+          expect(monitor.token).to eql(token)
         end
       end
 

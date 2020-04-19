@@ -7,20 +7,24 @@ require 'net/http'
 require 'uri'
 
 class Cronitor
-  attr_accessor :opts, :code
+  attr_accessor :token, :opts, :code
   API_URL = 'https://cronitor.io/v3'
   PING_URL = 'https://cronitor.link'
 
   class << self
-    attr_accessor :token
+    attr_accessor :default_token
+
+    def configure(&block)
+      block.call(self)
+    end
   end
 
   def initialize(token: ENV['CRONITOR_TOKEN'], opts: {}, code: nil)
-    self.class.token ||= token
+    @token = token || self.class.default_token
     @opts = opts
     @code = code
 
-    if self.class.token.nil? && @code.nil?
+    if @token.nil? && @code.nil?
       raise(
         Cronitor::Error,
         'Either a Cronitor API token or an existing monitor code must be ' \
@@ -50,7 +54,7 @@ class Cronitor
     http.use_ssl = uri.scheme == 'https'
 
     request = Net::HTTP::Post.new uri.path, default_headers
-    request.basic_auth self.class.token, nil
+    request.basic_auth @token, nil
     request.content_type = 'application/json'
     request.body = JSON.generate opts
 
@@ -66,7 +70,7 @@ class Cronitor
     http.use_ssl = uri.scheme == 'https'
 
     request = Net::HTTP::Get.new uri.path, default_headers
-    request.basic_auth self.class.token, nil
+    request.basic_auth @token, nil
 
     response = http.request request
 
