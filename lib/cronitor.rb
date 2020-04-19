@@ -54,7 +54,7 @@ class Cronitor
     http.use_ssl = uri.scheme == 'https'
 
     request = Net::HTTP::Post.new uri.path, default_headers
-    request.basic_auth @token, nil
+    request.basic_auth token, nil
     request.content_type = 'application/json'
     request.body = JSON.generate opts
 
@@ -70,7 +70,7 @@ class Cronitor
     http.use_ssl = uri.scheme == 'https'
 
     request = Net::HTTP::Get.new uri.path, default_headers
-    request.basic_auth @token, nil
+    request.basic_auth token, nil
 
     response = http.request request
 
