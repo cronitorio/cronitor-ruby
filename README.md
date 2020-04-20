@@ -38,13 +38,16 @@ require 'cronitor'
 Cronitor.configure do |cronitor|
   cronitor.default_token = 'token' # default token to be re-used by cronitor
 end
-````
+```
 
 #### Using ENV
 
 ```
 # .env
 CRONITOR_TOKEN: token
+
+# bash
+export CRONITOR_TOKEN='token'
 ```
 
 ### Creating a Monitor
