@@ -1,6 +1,6 @@
 # Cronitor
 
-[![Travis](https://img.shields.io/travis/evertrue/cronitor.svg)](https://travis-ci.org/evertrue/cronitor)
+![Test](https://github.com/cronitorio/cronitor-ruby/workflows/Test/badge.svg)
 [![Gem Version](https://badge.fury.io/rb/cronitor.svg)](https://badge.fury.io/rb/cronitor)
 
 [Cronitor](https://cronitor.io/) is a service for heartbeat-style monitoring of just about anything that can send an HTTP request.
