@@ -11,8 +11,16 @@ class Cronitor
   API_URL = 'https://cronitor.io/v3'
   PING_URL = 'https://cronitor.link'
 
+  class << self
+    attr_accessor :default_token
+
+    def configure(&block)
+      block.call(self)
+    end
+  end
+
   def initialize(token: ENV['CRONITOR_TOKEN'], opts: {}, code: nil)
-    @token = token
+    @token = token || self.class.default_token
     @opts = opts
     @code = code
 

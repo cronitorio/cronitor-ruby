@@ -7,6 +7,41 @@ RSpec.describe Cronitor do
   let(:monitor_options) { nil }
 
   before(:all) { ENV.delete('CRONITOR_TOKEN') }
+  before(:each) { described_class.default_token = nil }
+
+  describe '.default_token' do
+    before do
+      allow_any_instance_of(described_class).to receive(:create)
+    end
+
+    it 'set token on class' do
+      described_class.default_token = token
+      expect(described_class.default_token).to eq(token)
+    end
+
+    it 'reuse class token' do
+      described_class.default_token = token
+      expect { subject }.not_to raise_error
+    end
+
+    context 'with no class token' do
+      it 'raise' do
+        expect { subject }.to raise_error Cronitor::Error, 'Either a Cronitor API token or an existing monitor code must be ' \
+          'provided'
+      end
+    end
+  end
+
+  describe '.configure' do
+    before do
+      allow_any_instance_of(described_class).to receive(:create)
+    end
+
+    it 'configure' do
+      described_class.configure { |cronitor| cronitor.default_token = token } 
+      expect(described_class.default_token).to eq(token)
+    end
+  end
 
   it 'has a version number' do
     expect(Cronitor::VERSION).not_to be nil
