@@ -64,7 +64,7 @@ class Cronitor
   end
 
   def exists?(name)
-    uri = URI.parse "#{API_URL}/monitors/#{URI.escape name}"
+    uri = URI.parse "#{API_URL}/monitors/#{encode(name)}"
 
     http = Net::HTTP.new uri.host, uri.port
     http.use_ssl = uri.scheme == 'https'
@@ -83,7 +83,7 @@ class Cronitor
   end
 
   def ping(type, msg = nil)
-    uri = URI.parse "#{PING_URL}/#{URI.escape code}/#{URI.escape type}"
+    uri = URI.parse "#{PING_URL}/#{encode(code)}/#{encode(type)}"
     if %w[run complete fail].include?(type) && !msg.nil?
       uri.query = URI.encode_www_form 'msg' => msg
     end
@@ -134,5 +134,9 @@ class Cronitor
     hash.each_with_object({}) do |(k, v), h|
       h[k.to_sym] = v.is_a?(Hash) ? symbolize_keys(v) : v
     end
+  end
+
+  def encode(input)
+    CGI.escape(input).gsub('+', '%20')
   end
 end
