@@ -2,231 +2,214 @@
 
 require 'spec_helper'
 
+FAKE_API_KEY = 'fake_api_key'
+SAMPLE_YAML_FILE = './spec/support/cronitor.yaml'
+
+MONITOR = {
+  type: 'job',
+  key: 'a-test_key',
+  schedule: '* * * * *',
+  assertions: [
+      'metric.duration < 10 seconds'
+  ]
+}
+
+MONITOR_2 = MONITOR.clone
+MONITOR_2[:key] = 'another-test-key'
+
+
 RSpec.describe Cronitor do
-  let(:token) { '1234' }
-  let(:monitor_options) { nil }
-
-  before(:all) { ENV.delete('CRONITOR_TOKEN') }
-  before(:each) { described_class.default_token = nil }
-
-  describe '.default_token' do
-    before do
-      allow_any_instance_of(described_class).to receive(:create)
-    end
-
-    it 'set token on class' do
-      described_class.default_token = token
-      expect(described_class.default_token).to eq(token)
-    end
-
-    it 'reuse class token' do
-      described_class.default_token = token
-      expect { subject }.not_to raise_error
-    end
-
-    context 'with no class token' do
-      it 'raise' do
-        expect { subject }.to raise_error Cronitor::Error, 'Either a Cronitor API token or an existing monitor code must be ' \
-          'provided'
-      end
-    end
-  end
 
   describe '.configure' do
-    before do
-      allow_any_instance_of(described_class).to receive(:create)
-    end
-
-    it 'configure' do
-      described_class.configure { |cronitor| cronitor.default_token = token } 
-      expect(described_class.default_token).to eq(token)
-    end
-  end
-
-  it 'has a version number' do
-    expect(Cronitor::VERSION).not_to be nil
-  end
-
-  context 'sets its config correctly' do
-    let(:monitor_options) { { name: 'My Fancy Monitor' } }
-    let(:code) { 'abcd' }
-    let(:monitor) do
-      Cronitor.new token: token, opts: monitor_options, code: code
-    end
-
-    it 'has the specified API token' do
-      expect(monitor.token).to eq '1234'
-    end
-
-    it 'has the specified options' do
-      expect(monitor.opts[:name]).to eq 'My Fancy Monitor'
-    end
-
-    it 'has the specified code' do
-      expect(monitor.code).to eq 'abcd'
-    end
-  end
-
-  describe '.new' do
-    let(:monitor) { Cronitor.new token: token, opts: monitor_options }
-
-    context 'when a token and all options are provided' do
-      let(:monitor_options) do
-        {
-          name: 'My Fancy Monitor',
-          notifications: { emails: ['test@example.com'] },
-          rules: [{
-            rule_type: 'not_completed_in',
-            duration: 5,
-            time_unit: 'seconds'
-          }],
-          note: 'A human-friendly description of this monitor'
-        }
+    it 'sets the api_key, api_version, and env' do
+      Cronitor.configure do |cronitor|
+        cronitor.api_key = 'foo'
+        cronitor.api_version = 'bar'
+        cronitor.environment = 'baz'
       end
 
-      context 'with a token in ENV' do
-        before { ENV['CRONITOR_TOKEN'] = token }
-        after { ENV.delete('CRONITOR_TOKEN') }
+      expect(Cronitor.api_key).to eq('foo')
+      expect(Cronitor.api_version).to eq('bar')
+      expect(Cronitor.environment).to eq('baz')
+    end
+  end
 
-        it 'uses the token from ENV' do
-          expect(monitor.token).to eql(token)
+  describe 'YAML configuration' do
+    before(:all) do
+      Cronitor.configure do |cronitor|
+        cronitor.api_key = FAKE_API_KEY
+      end
+    end
+
+    context '.read_config' do
+      context 'when no config path is set' do
+        it 'raises a configuration exception' do
+          Cronitor.config = nil
+          expect { Cronitor.read_config() }.to raise_error
         end
       end
 
-      context 'when the monitor does not exist' do
-        it 'creates a monitor' do
-          expect(monitor.code).to eq 'abcd'
-        end
-      end
-
-      context 'when the monitor already exists' do
-        before { monitor_options[:name] = 'Test Cronitor' }
-
-        it "uses the existing monitor's code" do
-          expect(monitor.code).to eq 'efgh'
+      context 'when a valid yaml file is supplied' do
+        it 'returns a list of monitors' do
+          data = Cronitor.read_config(SAMPLE_YAML_FILE, output: true)
+          expect(data).to include('monitors')
+          expect(data['monitors'].length == 5)
         end
       end
     end
 
-    context 'when a code for a pre-existing monitor is provided' do
-      let(:monitor) { Cronitor.new code: 'efgh' }
+    context '.apply_config' do
+      context 'when no config path is set' do
+        it 'raises a ConfigurationError' do
+          Cronitor.config = nil
+          expect{ Cronitor.apply_config() }.to raise_error
+        end
+      end
 
-      it 'uses the existing monitor' do
-        expect(monitor.code).to eq 'efgh'
+      it 'makes a put request with a list of monitors and rollback: false' do
+        data = Cronitor.read_config(SAMPLE_YAML_FILE, output: true)
+        expect(Cronitor::Monitor).to receive(:put).with(data['monitors'], rollback: false)
+        Cronitor.apply_config()
       end
     end
 
-    context 'when token and code are missing' do
-      let(:token) { nil }
+    context '.validate_config' do
+      context 'when no config path is set' do
+        it 'raises a ConfigurationError' do
+          Cronitor.config = nil
+          expect{ Cronitor.validate_config() }.to raise_error
+        end
+      end
 
-      it 'raises Cronitor::Error exception' do
-        expect { monitor }.to raise_error(
-          Cronitor::Error,
-          'Either a Cronitor API token or an existing monitor code must be ' \
-          'provided'
-        )
+      it 'makes a put request with a list of monitors and rollback: true' do
+        data = Cronitor.read_config(SAMPLE_YAML_FILE, output: true)
+        expect(Cronitor::Monitor).to receive(:put).with(data['monitors'], rollback: true)
+        Cronitor.validate_config()
       end
     end
 
-    context 'when name option is missing' do
-      let(:monitor_options) do
-        {
-          notifications: { emails: ['noone@example.com'] },
-          rules: [{
-            rule_type: 'not_run_in',
-            duration: 5,
-            time_unit: 'seconds'
-          }]
-        }
-      end
-
-      it 'raises Cronitor::Error exception' do
-        expect { monitor }.to raise_error(
-          Cronitor::Error,
-          'name: This field is required.'
-        )
-      end
-    end
-
-    context 'when notifications are missing' do
-      let(:monitor_options) do
-        {
-          name: 'My Fancy Monitor',
-          rules: [{
-            rule_type: 'not_run_in',
-            duration: 5,
-            time_unit: 'seconds'
-          }]
-        }
-      end
-
-      it 'raises Cronitor::Error exception' do
-        expect { monitor }.to raise_error(
-          Cronitor::Error,
-          'notifications: This field is required.'
-        )
-      end
-    end
-
-    context 'when rules are missing' do
-      let(:monitor_options) do
-        {
-          name: 'My Fancy Monitor',
-          notifications: { emails: ['noone@example.com'] }
-        }
-      end
-
-      it 'raises Cronitor::Error exception' do
-        expect { monitor }.to raise_error(
-          Cronitor::Error,
-          'rules: This field is required.'
-        )
-      end
-    end
   end
 
-  describe '.ping' do
-    let(:monitor) { Cronitor.new token: token, opts: monitor_options }
-    let(:monitor_options) do
-      {
-        name: 'My Fancy Monitor',
-        notifications: { emails: ['test@example.com'] },
-        rules: [{
-          rule_type: 'not_completed_in',
-          duration: 5,
-          time_unit: 'seconds'
-        }],
-        note: 'A human-friendly description of this monitor'
-      }
-    end
+  describe 'Telemetry API' do
 
-    %w[run complete fail].each do |ping_type|
-      context 'with a valid monitor' do
-        describe ping_type do
-          it 'notifies Cronitor' do
-            expect(monitor.ping(ping_type)).to eq true
-          end
-          it 'passes the message to Cronitor' do
-            monitor.ping(ping_type, 'your message here')
-            expect(FakeCronitor.last_request.params).to include(
-              'msg' => 'your message here'
-            )
+    let(:monitor) { Cronitor::Monitor.new('test-key') }
+    let(:valid_params) { {
+      message: "hello there",
+      metrics: {
+          count: 1,
+          error_count: 1,
+          duration: 100,
+      },
+      env: "production",
+      host: '10-0-0-223',
+      series: 'world',
+    } }
+
+    ['run', 'complete', 'fail', 'ok'].each do |state|
+      context "Ping #{state}" do
+        before(:all) do
+          Cronitor.configure do |cronitor|
+            cronitor.api_key = FAKE_API_KEY
           end
         end
-      end
 
-      context 'with an invalid monitor' do
-        before { monitor.code = 'ijkl' }
+        after(:all) do
+          Cronitor.api_key = nil
+        end
 
-        describe ping_type do
-          it 'raises Cronitor::Error exception' do
-            expect { monitor.ping(ping_type) }.to raise_error(
-              Cronitor::Error,
-              'Something else has gone awry. HTTP status: 404'
-            )
-          end
+
+        it "calls #{state} correctly" do
+          expect(HTTParty).to receive(:get).and_return(instance_double(HTTParty::Response, code: 200))
+          monitor.ping(state: state)
+        end
+
+        xit "calls #{state} correctly with all params" do
+          query = valid_params.clone
+          query.merge({
+            state: state,
+            metric: ['count:1', 'error_count:1', 'duration:100']
+          })
+          query.delete(:metrics)
+
+          expect(HTTParty).to receive(:get).with(
+            monitor.send(:ping_api_url),
+            query: query,
+            headers: Cronitor::Monitor.class_variable_get(:@@HEADERS),
+            timeout: 5,
+          ).and_return(instance_double(HTTParty::Response, code: 200))
+
+          monitor.ping({state: state}.merge(valid_params))
         end
       end
     end
+
+    context "when no api key is set" do
+      it "logs an error to STDOUT" do
+        expect(Cronitor.logger).to receive(:error)
+        monitor.ping()
+      end
+    end
+  end
+
+  describe 'Monitor' do
+    before(:all) do
+      Cronitor.configure do |cronitor|
+        cronitor.api_key = FAKE_API_KEY
+      end
+    end
+
+    context '.new' do
+      it 'has the expected key' do
+        expect(Cronitor::Monitor.new('test-key').key).to eq 'test-key'
+      end
+    end
+
+    context '.put' do
+      it 'should create a monitor' do
+        expect(HTTParty).to receive(:put).and_return(
+          instance_double(HTTParty::Response, code: 200, body: {'monitors': [MONITOR]})
+        )
+        monitor = Cronitor::Monitor.put(key: 'test-job', schedule: '* * * * *', type: 'job')
+      end
+
+      it 'should create a set of monitors' do
+        expect(HTTParty).to receive(:put).and_return(
+          instance_double(HTTParty::Response, code: 200, body: {'monitors': [MONITOR, MONITOR_2]})
+        )
+        monitor = Cronitor::Monitor.put([MONITOR, MONITOR_2])
+      end
+
+      context 'api validation fails' do
+        it 'should return a Cronitor:Error on API validation error ' do
+        end
+      end
+    end
+  end
+
+  describe 'functional tests - ', type: 'functional' do
+    before(:all) do
+      Cronitor.configure do |cronitor|
+        cronitor.api_key = ENV['CRONITOR_API_KEY']
+        cronitor.config = SAMPLE_YAML_FILE
+      end
+    end
+
+    it 'Creates a monitor' do
+      monitor = Cronitor::Monitor.put(key: 'fuck-o', schedule: '*/5 * * * *', type: 'job')
+      expect(monitor.data[:key]).to eq('fuck-o')
+    end
+
+    it 'Syncs yaml config' do
+      Cronitor.apply_config
+    end
+
+    it 'Pings a monitor' do
+      monitor = Cronitor::Monitor.new('ruby-test-pings')
+      monitor.ping
+      monitor.ping(state: 'run')
+      monitor.ping(state: 'complete', metrics: {duration: 100, error_count:10}, host:'uranus1', message: 'holla')
+    end
+
   end
 end
+
