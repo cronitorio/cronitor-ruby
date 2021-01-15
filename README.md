@@ -1,135 +1,223 @@
-# Cronitor
+# Cronitor Ruby Library
 
 ![Test](https://github.com/cronitorio/cronitor-ruby/workflows/Test/badge.svg)
 [![Gem Version](https://badge.fury.io/rb/cronitor.svg)](https://badge.fury.io/rb/cronitor)
 
-[Cronitor](https://cronitor.io/) is a service for heartbeat-style monitoring of just about anything that can send an HTTP request.
 
-This gem provides a simple abstraction for the creation and pinging of a Cronitor monitor. For a better understanding of the API this gem talks to, please see [How Cronitor Works](https://cronitor.io/help/how-cronitor-works).
+[Cronitor](https://cronitor.io/) provides dead simple monitoring for cron jobs, daemons, data pipelines, queue workers, and anything else that can send or receive an HTTP request. The Cronitor Ruby library provides convenient access to the Cronitor API from applications written in Ruby.
+
+## Documentation
+See our [API docs](https://cronitor.io/docs/api) for a detailed reference information about the APIs this library uses for configuring monitors and sending telemetry pings.
 
 ## Installation
 
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'cronitor'
 ```
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install cronitor
+pip install cronitor
+```
 
 ## Usage
 
+The package needs to be configured with your account's `API key`, which is available on the [account settings](https://cronitor.io/settings) page. You can also optionally specify an `Api Version` (default: account default) and `Environment` (default: account default).
 
-### Configure
-
-You need to set Cronitor Token in order to create a monitor
-
-#### Using configure
+These can be supplied using the environment variables `CRONITOR_API_KEY`, `CRONITOR_API_VERSION`, `CRONITOR_ENVIRONMENT` or set directly on the cronitor object.
 
 ```ruby
 require 'cronitor'
+Cronitor.api_key = 'apiKey123'
+Cronitor.api_version = '2020-10-01'
+Cronitor.environment = 'staging'
+```
 
-Cronitor.configure do |cronitor|
-  cronitor.default_token = 'token' # default token to be re-used by cronitor
+You can also use a YAML config file to manage all of your monitors (_see Create and Update Monitors section below_). The path to this file can be supplied using the enviroment variable `CRONITOR_CONFIG` or call `cronitor.read_config()`.
+
+```ruby
+import cronitor
+cronitor.read_config('./path/to/cronitor.yaml')
+```
+
+
+### Monitor Any Block
+```
+cronitor.job 'warehouse-replenishmenth-report' do
+  ReplenishmentReport.new(Date.today).run()
 end
 ```
 
-#### Using ENV
+### Sending Telemetry Events
 
-```
-# .env
-CRONITOR_TOKEN: token
-
-# bash
-export CRONITOR_TOKEN='token'
-```
-
-### Creating a Monitor
-
-A Cronitor monitor (hereafter referred to only as a monitor for brevity) is created if it does not already exist, and its ID returned.
-
-Please see the [Cronitor Monitor API docs](https://cronitor.io/docs/monitor-api) for details of all the possible monitor options.
-
-Example of creating a heartbeat monitor:
+If you want finer control over when/how [telemetry pings](https://cronitor.io/docs/telemetry-api) are sent,
+you can instantiate a monitor and call `.ping`.
 
 ```ruby
 require 'cronitor'
 
-monitor_options = {
-  name: 'My Fancy Monitor',
-  type: 'heartbeat', # Optional: the gem defaults to this; the other value, 'healthcheck', is not yet supported by this gem
-  notifications: {
-    emails: ['test@example.com'],
-    slack: [],
-    pagerduty: [],
-    phones: [],
-    webhooks: []
+
+monitor = Cronitor::Monitor.new('heartbeat-monitor')
+
+monitor.ping # a basic heartbeat event
+
+# optional params can be passed as kwargs
+# complete list - https://cronitor.io/docs/telemetry-api#parameters
+
+monitor.ping(state: 'run', env: 'staging') # a job/process has started in a staging environment
+
+# a job/process has completed - include metrics for cronitor to record
+monitor.ping(state: 'complete', metrics: {count: 1000, error_count: 17})
+```
+
+### Pause, Reset, Delete
+
+```ruby
+import cronitor
+
+monitor = Cronitor::Monitor.new('heartbeat-monitor')
+
+monitor.pause(24) # pause alerting for 24 hours
+monitor.unpause # alias for .pause(0)
+monitor.ok # manually reset to a passing state alias for monitor.ping({state: ok})
+monitor.delete # destroy the monitor
+```
+
+## Create and Update Monitors
+
+You can create monitors programatically using the `Monitor` object.
+For details on all of the attributes that can be set see the [Monitor API](https://cronitor.io/docs/monitor-api) documentation.
+
+
+```ruby
+require 'cronitor'
+
+monitors = Cronitor::Monitor.put([
+  {
+    type: 'job',
+    key: 'send-customer-invoices',
+    schedule: '0 0 * * *',
+    assertions: [
+        'metric.duration < 5 min'
+    ],
+    notify: ['devops-alerts-slack']
   },
-  rules: [
-    {
-      rule_type: 'run_ping_not_received',
-      value: 5,
-      time_unit: 'seconds'
-    }
-  ],
-  note: 'A human-friendly description of this monitor'
-}
-
-# The token parameter is optional; if omittted, ENV['CRONITOR_TOKEN'] will be used if not configured
-my_monitor = Cronitor.new token: 'api_token', opts: monitor_options
+  {
+    type: 'synthetic',
+    key: 'Orders Api Uptime',
+    schedule: 'every 45 seconds',
+    assertions: [
+        'response.code = 200',
+        'response.time < 1.5s',
+        'response.json "open_orders" < 2000'
+    ]
+  }
+])
 ```
 
-### Updating an existing monitor
-
-Currently this gem does not support updating or deleting an existing monitor.
-
-### Pinging a Monitor
-
-Once you’ve created a monitor, you can continue to use the existing instance of the object to ping the monitor that your task status: `run`, `complete`, or `fail`.
+You can also manage all of your monitors via a YAML config file.
+This can be version controlled and synced to Cronitor as part of
+a deployment process or system update.
 
 ```ruby
-my_monitor.ping 'run'
-my_monitor.ping 'complete'
-my_monitor.ping 'fail', 'A short description of the failure'
+require 'cronitor'
+
+# read config file and set credentials (if included).
+Cronitor.read_config('./cronitor.yaml')
+
+# sync config file's monitors to Cronitor.
+Cronitor.apply_config
+
+# send config file's monitors to Cronitor to validate correctness.
+# monitors will not be saved.
+Cronitor.validate_config
 ```
 
-### Pinging a monitor when you have a Cronitor code
 
-You may already have the code for a monitor, in which case, the expense of `Cronitor.create` may seem unnecessary (since it makes an HTTP request to check if a monitor exists, and you already know it does).
+The `cronitor.yaml` file accepts the following attributes:
 
-Cronitor does not require a token for pinging a monitor unless you have enabled Ping API authentication in your account settings. At the moment, this gem does not support Ping API auth.
+```yaml
+api_key: 'optionally read Cronitor api_key from here'
+api_version: 'optionally read Cronitor api_version from here'
+environment: 'optionally set an environment for telemetry pings'
 
-In that case:
+# configure all of your monitors with type "job"
+# you may omit the type attribute and the key
+# of each object will be set as the monitor key
+jobs:
+    nightly-database-backup:
+        schedule: 0 0 * * *
+        notify:
+            - devops-alert-pagerduty
+        assertions:
+            - metric.duration < 5 minutes
 
-```ruby
-my_monitor = Cronitor.new code: 'abcd'
+    send-welcome-email:
+        schedule: every 10 minutes
+        assertions:
+            - metric.count > 0
+            - metric.duration < 30 seconds
+
+# configure all of your monitors with type "synthetic"
+synthetics:
+    cronitor-homepage:
+        request:
+            url: https://cronitor.io
+            regions:
+                - us-east-1
+                - eu-central-1
+                - ap-northeast-1
+        assertions:
+            - response.code = 200
+            - response.time < 2s
+
+    cronitor-telemetry-api:
+        request:
+            url: https://cronitor.link/ping
+        assertions:
+            - response.body contains ok
+            - response.time < .25s
+
+events:
+    production-deploy:
+        notify:
+            alerts: ['deploys-slack']
+            events: true # send alert when the event occurs
+
 ```
 
-The aforementioned ping methods can now be used.
-
-## Development
-
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 ## Contributing
 
-1. Fork it ( https://github.com/evertrue/cronitor/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+Pull requests and features are happily considered! By participating in this project you agree to abide by the [Code of Conduct](http://contributor-covenant.org/version/2/0).
+
+### To contribute
+
+Fork, then clone the repo:
+
+    git clone git@github.com:your-username/cronitor-ruby.git
+
+
+Set up your machine:
+
+    bin/setup
+
+
+Make sure the tests pass:
+
+    rake spec
+
+
+Make your change. You can experiment using:
+
+    bin/console
+
+
+Add tests for your change. Make the tests pass:
+
+    rake spec
+
+Push to your fork and [submit a pull request]( https://github.com/cronitorio/cronitor-ruby/compare/)
+
 
 ## Release a new version
 
-The `bump` gem makes this easy:
+The bump gem makes this easy:
 
-1. `rake bump:(major|minor|patch|pre)`
-2. `rake release`
+1. rake bump:(major|minor|patch|pre)
+2. rake release
