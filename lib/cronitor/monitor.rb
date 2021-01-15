@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+def symbolize_keys(obj)
+  obj.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+end
+
 module Cronitor
   class Monitor
     attr_reader :key, :data, :api_key, :api_version, :env
@@ -13,20 +17,15 @@ module Cronitor
     PING_RETRY_THRESHOLD = 5
 
     def self.put(opts={})
-      api_key = opts[:api_key] || Cronitor.api_key
-      opts.delete(:api_key)
-
       rollback = opts[:rollback] || false
       opts.delete(:rollback)
 
-      @@HEADERS['Cronitor-Version'] = opts[:api_version]
-      opts.delete(:api_version)
       monitors = opts[:monitors] || [opts]
 
       resp = HTTParty.put(
         Cronitor.monitor_api_url,
         basic_auth: {
-          username: api_key,
+          username: Cronitor.api_key,
           password: ''
         },
         body: {
@@ -42,8 +41,8 @@ module Cronitor
         data = JSON.parse(resp.body)
 
         (data['monitors']||[]).each do |md|
-          m = Monitor.new(md[:key])
-          m.data = md
+          m = Monitor.new(md['key'])
+          m.data = symbolize_keys(md)
           _monitors << m
         end
         return _monitors.length == 1 ? _monitors[0] : _monitors
@@ -85,7 +84,7 @@ module Cronitor
     end
 
     def data=(data)
-      @data = data.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+      @data = symbolize_keys(data)
     end
 
     def ping(params = {})
@@ -137,7 +136,16 @@ module Cronitor
     end
 
     def pause(hours=nil)
-      resp = HTTParty.get("#{monitor_api_url}/pause#{hours ? '/' + hours.to_s : ''}")
+      resp = HTTParty.get(
+        "#{monitor_api_url}/pause#{hours ? '/' + hours.to_s : ''}",
+        timeout: 5,
+        headers: @@HEADERS,
+        basic_auth: {
+          username: Cronitor.api_key,
+          password: ''
+        }
+      )
+      puts(resp.code)
       resp.code == 200
     end
 
@@ -145,6 +153,17 @@ module Cronitor
       pause(0)
     end
 
+    def ping_api_url
+      "https://cronitor.link/p/#{api_key}/#{key}"
+    end
+
+    def fallback_ping_api_url
+      "https://cronitor.io/p/#{api_key}/#{key}"
+    end
+
+    def monitor_api_url
+      "#{Cronitor.monitor_api_url}/#{key}"
+    end
 
     private
 
@@ -166,18 +185,6 @@ module Cronitor
           stamp: Time.now.to_f,
           env: params.fetch(:env, env)
       }
-    end
-
-    def ping_api_url
-      "https://cronitor.link/p/#{api_key}/#{key}"
-    end
-
-    def fallback_ping_api_url
-      "https://cronitor.io/p/#{api_key}/#{key}"
-    end
-
-    def monitor_api_url
-      "#{Cronitor.monitor_api_url}/#{key}"
     end
   end
 end
