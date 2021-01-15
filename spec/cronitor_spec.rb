@@ -45,7 +45,7 @@ RSpec.describe Cronitor do
       context 'when no config path is set' do
         it 'raises a configuration exception' do
           Cronitor.config = nil
-          expect { Cronitor.read_config() }.to raise_error
+          expect { Cronitor.read_config() }.to raise_error(Cronitor::ConfigurationError)
         end
       end
 
@@ -62,13 +62,16 @@ RSpec.describe Cronitor do
       context 'when no config path is set' do
         it 'raises a ConfigurationError' do
           Cronitor.config = nil
-          expect{ Cronitor.apply_config() }.to raise_error
+          expect{ Cronitor.apply_config() }.to raise_error(Cronitor::ConfigurationError)
         end
       end
 
       it 'makes a put request with a list of monitors and rollback: false' do
         data = Cronitor.read_config(SAMPLE_YAML_FILE, output: true)
-        expect(Cronitor::Monitor).to receive(:put).with(data['monitors'], rollback: false)
+        expect(Cronitor::Monitor).to receive(:put)
+          .with(monitors: data['monitors'], rollback: false)
+          .and_return([data['monitors'].map{|m| Cronitor::Monitor.new(m['key'])}])
+
         Cronitor.apply_config()
       end
     end
@@ -77,13 +80,15 @@ RSpec.describe Cronitor do
       context 'when no config path is set' do
         it 'raises a ConfigurationError' do
           Cronitor.config = nil
-          expect{ Cronitor.validate_config() }.to raise_error
+          expect{ Cronitor.validate_config() }.to raise_error(Cronitor::ConfigurationError)
         end
       end
 
       it 'makes a put request with a list of monitors and rollback: true' do
         data = Cronitor.read_config(SAMPLE_YAML_FILE, output: true)
-        expect(Cronitor::Monitor).to receive(:put).with(data['monitors'], rollback: true)
+        expect(Cronitor::Monitor).to receive(:put)
+          .with(monitors: data['monitors'], rollback: true)
+          .and_return([data['monitors'].map{|m| Cronitor::Monitor.new(m['key'])}])
         Cronitor.validate_config()
       end
     end
@@ -123,7 +128,7 @@ RSpec.describe Cronitor do
           monitor.ping(state: state)
         end
 
-        xit "calls #{state} correctly with all params" do
+        it "calls #{state} correctly with all params" do
           query = valid_params.clone
           query.merge({
             state: state,
@@ -133,9 +138,11 @@ RSpec.describe Cronitor do
 
           expect(HTTParty).to receive(:get).with(
             monitor.send(:ping_api_url),
-            query: query,
-            headers: Cronitor::Monitor.class_variable_get(:@@HEADERS),
-            timeout: 5,
+            hash_including({
+              query: hash_including(query),
+              headers: Cronitor::Monitor.class_variable_get(:@@HEADERS),
+              timeout: 5,
+            })
           ).and_return(instance_double(HTTParty::Response, code: 200))
 
           monitor.ping({state: state}.merge(valid_params))
@@ -167,16 +174,16 @@ RSpec.describe Cronitor do
     context '.put' do
       it 'should create a monitor' do
         expect(HTTParty).to receive(:put).and_return(
-          instance_double(HTTParty::Response, code: 200, body: {'monitors': [MONITOR]})
+          instance_double(HTTParty::Response, code: 200, body: {'monitors': [MONITOR]}.to_json)
         )
         monitor = Cronitor::Monitor.put(key: 'test-job', schedule: '* * * * *', type: 'job')
       end
 
       it 'should create a set of monitors' do
         expect(HTTParty).to receive(:put).and_return(
-          instance_double(HTTParty::Response, code: 200, body: {'monitors': [MONITOR, MONITOR_2]})
+          instance_double(HTTParty::Response, code: 200, body: {'monitors': [MONITOR, MONITOR_2]}.to_json)
         )
-        monitor = Cronitor::Monitor.put([MONITOR, MONITOR_2])
+        monitor = Cronitor::Monitor.put(monitors: [MONITOR, MONITOR_2])
       end
 
       context 'api validation fails' do
@@ -195,8 +202,8 @@ RSpec.describe Cronitor do
     end
 
     it 'Creates a monitor' do
-      monitor = Cronitor::Monitor.put(key: 'fuck-o', schedule: '*/5 * * * *', type: 'job')
-      expect(monitor.data[:key]).to eq('fuck-o')
+      monitor = Cronitor::Monitor.put(key: 'test-key', schedule: '*/5 * * * *', type: 'job')
+      expect(monitor.data[:key]).to eq('test-key')
     end
 
     it 'Syncs yaml config' do
@@ -208,6 +215,16 @@ RSpec.describe Cronitor do
       monitor.ping
       monitor.ping(state: 'run')
       monitor.ping(state: 'complete', metrics: {duration: 100, error_count:10}, host:'uranus1', message: 'holla')
+    end
+
+    it 'Pauses a monitor' do
+      monitor = Cronitor::Monitor.new('test-key')
+      monitor.pause
+      monitor.unpause
+    end
+
+    it 'Deletes a monitor' do
+      expect(Cronitor::Monitor.delete('test-key')).to be(true)
     end
 
   end

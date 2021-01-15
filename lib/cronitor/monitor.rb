@@ -12,17 +12,17 @@ module Cronitor
 
     PING_RETRY_THRESHOLD = 5
 
-    def self.put(monitors=nil, kwargs={})
-      api_key = kwargs[:api_key] || Cronitor.api_key
-      kwargs.delete(:api_key)
+    def self.put(opts={})
+      api_key = opts[:api_key] || Cronitor.api_key
+      opts.delete(:api_key)
 
-      rollback = kwargs[:rollback] || false
-      kwargs.delete(:rollback)
+      rollback = opts[:rollback] || false
+      opts.delete(:rollback)
 
-      @@HEADERS['Cronitor-Version'] = kwargs[:api_version]
-      kwargs.delete(:api_version)
+      @@HEADERS['Cronitor-Version'] = opts[:api_version]
+      opts.delete(:api_version)
+      monitors = opts[:monitors] || [opts]
 
-      monitors = monitors || [kwargs]
       resp = HTTParty.put(
         Cronitor.monitor_api_url,
         basic_auth: {
@@ -39,8 +39,9 @@ module Cronitor
 
       if resp.code == 200
         _monitors = []
-        (resp.body[:monitors]||[]).each do |md|
-          self._symbolize_keys(md)
+        data = JSON.parse(resp.body)
+
+        (data['monitors']||[]).each do |md|
           m = Monitor.new(md[:key])
           m.data = md
           _monitors << m
@@ -55,7 +56,7 @@ module Cronitor
 
     def self.delete(key)
       resp = HTTParty.delete(
-        "#{self.monitor_api_url}/key",
+        "#{Cronitor.monitor_api_url}/#{key}",
         timeout: 10,
         basic_auth: {
           username: Cronitor.api_key,
@@ -63,7 +64,11 @@ module Cronitor
         },
         headers: @@HEADERS
       )
-      resp.code == 200
+      if resp.code != 204
+        Cronitor.logger.error("Error deleting monitor: #{key}")
+        return false
+      end
+      true
     end
 
     def initialize(key, api_key: nil, api_version: nil, env: nil)
@@ -80,7 +85,7 @@ module Cronitor
     end
 
     def data=(data)
-      @data = data
+      @data = data.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
     end
 
     def ping(params = {})
@@ -108,9 +113,10 @@ module Cronitor
             out = query.map{|k, v| "#{k}=#{v}"}
             out += metrics.map{|m| "metric=#{m}"} if !metrics.nil?
             out.join('&')
-          }
-          # query_string_normalizer for metrics. instead of metric[]=foo:1 we want metric=foo:1
-      )
+          } # query_string_normalizer for metrics. instead of metric[]=foo:1 we want metric=foo:1
+
+        )
+
         if response.code != 200
           Cronitor.logger.error("Cronitor Telemetry Error: #{response.code}")
           return false
@@ -131,7 +137,7 @@ module Cronitor
     end
 
     def pause(hours=nil)
-      resp = HTTParty.get("#{monitor_api_url}/pause#{hours ? '/' + hours : ''}")
+      resp = HTTParty.get("#{monitor_api_url}/pause#{hours ? '/' + hours.to_s : ''}")
       resp.code == 200
     end
 
@@ -148,7 +154,6 @@ module Cronitor
       end
 
       resp = HTTParty.get(monitor_api_url, timeout: 10, headers: @@HEADERS, format: :json)
-      self._symbolize_keys(resp.body)
     end
 
     def clean_params(params)
@@ -172,13 +177,7 @@ module Cronitor
     end
 
     def monitor_api_url
-      "#{Cronitor.monitor_api_url}/{key}"
-    end
-
-    def self._symbolize_keys(hash)
-      hash.each_with_object({}) do |(k, v), h|
-        h[k.to_sym] = v.is_a?(Hash) ? self._symbolize_keys(v) : v
-      end
+      "#{Cronitor.monitor_api_url}/#{key}"
     end
   end
 end

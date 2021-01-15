@@ -11,6 +11,7 @@ require 'cronitor/error'
 require 'cronitor/version'
 require 'cronitor/monitor'
 
+require 'pry'
 module Cronitor
 
   self.api_key = ENV['CRONITOR_API_KEY']
@@ -97,8 +98,8 @@ module Cronitor
   def self.apply_config(rollback: false)
     begin
       conf = self.read_config(output: true)
-      monitors = Monitor.put(conf.fetch('monitors'), rollback: rollback)
-      Cronitor.logger.info("#{} monitors #{rollback ? 'validated' : 'synced to Cronitor'}.")
+      monitors = Monitor.put(monitors: conf.fetch('monitors', []), rollback: rollback)
+      puts("#{monitors.length} monitors #{rollback ? 'validated' : 'synced to Cronitor'}.")
     rescue ValidationError => e
       Cronitor.logger.error(e)
     end
