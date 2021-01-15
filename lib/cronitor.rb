@@ -11,7 +11,6 @@ require 'cronitor/error'
 require 'cronitor/version'
 require 'cronitor/monitor'
 
-require 'pry'
 module Cronitor
 
   self.api_key = ENV['CRONITOR_API_KEY']

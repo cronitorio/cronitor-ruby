@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'pry'
+
 module Cronitor
   class Monitor
     attr_reader :key, :data, :api_key, :api_version, :env
