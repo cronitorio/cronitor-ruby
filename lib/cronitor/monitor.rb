@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-def symbolize_keys(obj)
-  obj.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
-end
-
 module Cronitor
   class Monitor
     attr_reader :key, :data, :api_key, :api_version, :env
@@ -42,7 +38,7 @@ module Cronitor
 
         (data['monitors']||[]).each do |md|
           m = Monitor.new(md['key'])
-          m.data = symbolize_keys(md)
+          m.data = Cronitor.symbolize_keys(md)
           _monitors << m
         end
         return _monitors.length == 1 ? _monitors[0] : _monitors
@@ -84,7 +80,7 @@ module Cronitor
     end
 
     def data=(data)
-      @data = symbolize_keys(data)
+      @data = Cronitor.symbolize_keys(data)
     end
 
     def ping(params = {})
@@ -186,5 +182,9 @@ module Cronitor
           env: params.fetch(:env, env)
       }
     end
+  end
+
+  def self.symbolize_keys(obj)
+    obj.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
   end
 end
