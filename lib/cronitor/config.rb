@@ -1,6 +1,6 @@
 module Cronitor
   class << self
-    attr_accessor :api_key, :api_version, :environment, :logger, :config
+    attr_accessor :api_key, :api_version, :environment, :logger, :config, :_headers
 
     def configure(&block)
       block.call(self)
@@ -13,4 +13,9 @@ module Cronitor
   self.config = ENV['CRONITOR_CONFIG']
   self.logger = Logger.new(STDOUT)
   self.logger.level = Logger::INFO
+  self._headers = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'cronitor-ruby',
+    'Cronitor-Version': Cronitor.api_version
+  }
 end

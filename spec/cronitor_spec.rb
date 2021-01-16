@@ -140,7 +140,7 @@ RSpec.describe Cronitor do
             monitor.send(:ping_api_url),
             hash_including({
               query: hash_including(query),
-              headers: Cronitor::Monitor.class_variable_get(:@@HEADERS),
+              headers: Cronitor._headers,
               timeout: 5,
             })
           ).and_return(instance_double(HTTParty::Response, code: 200))

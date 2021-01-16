@@ -42,20 +42,13 @@ module Cronitor
     end
 
     conf = YAML.load(File.read(Cronitor.config))
-
-    conf.each{ |k, v|
+    conf.each do |k, v|
       raise ConfigurationError.new("Invalid configuration variable: #{k}") unless self.YAML_KEYS.include?(k)
-    }
+    end
 
-    if conf[:api_key]
-      Cronitor.api_key = conf[:api_key]
-    end
-    if conf[:api_version]
-      Cronitor.api_version = conf[:api_version]
-    end
-    if conf[:environment]
-      Cronitor.environment = conf[:environment]
-    end
+    Cronitor.api_key     = conf[:api_key] if conf[:api_key]
+    Cronitor.api_version = conf[:api_version] if conf[:api_version]
+    Cronitor.environment = conf[:environment] if conf[:environment]
 
     return unless output
 
@@ -66,7 +59,7 @@ module Cronitor
       return unless to_parse
 
       if !to_parse.is_a?(Hash)
-        raise ConfigurationError.new("A dict of with keys corresponding to monitor keys is expected.")
+        raise ConfigurationError.new("A Hash with keys corresponding to monitor keys is expected.")
       end
 
       to_parse.each do |key, m|

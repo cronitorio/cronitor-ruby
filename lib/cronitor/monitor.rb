@@ -4,12 +4,6 @@ module Cronitor
   class Monitor
     attr_reader :key, :data, :api_key, :api_version, :env
 
-    @@HEADERS = {
-      'Content-Type': 'application/json',
-      'User-Agent': 'cronitor-ruby',
-      'Cronitor-Version': Cronitor.api_version
-    }
-
     PING_RETRY_THRESHOLD = 5
 
     def self.put(opts={})
@@ -28,7 +22,7 @@ module Cronitor
           monitors: monitors,
           rollback: rollback
         }.to_json,
-        headers: @@HEADERS,
+        headers: Cronitor._headers,
         timeout: 10
       )
 
@@ -57,7 +51,7 @@ module Cronitor
           username: Cronitor.api_key,
           password: ''
         },
-        headers: @@HEADERS
+        headers: Cronitor._headers
       )
       if resp.code != 204
         Cronitor.logger.error("Error deleting monitor: #{key}")
@@ -66,11 +60,10 @@ module Cronitor
       true
     end
 
-    def initialize(key, api_key: nil, api_version: nil, env: nil)
+    def initialize(key, api_key: nil, env: nil)
       @key = key
       @api_key = api_key || Cronitor.api_key
       @env = env || Cronitor.environment
-      @@HEADERS['Cronitor-Version'] = api_version if api_version
     end
 
     def data
@@ -100,7 +93,7 @@ module Cronitor
           ping_url,
           query: clean_params(params),
           timeout: 5,
-          headers: @@HEADERS,
+          headers: Cronitor._headers,
           query_string_normalizer: -> (query) {
             query.compact!
             metrics = query[:metric]
@@ -120,7 +113,7 @@ module Cronitor
       rescue StandardError => e
         # rescue instances of StandardError i.e. Timeout::Error, SocketError, etc
         Cronitor.logger.error("Cronitor Telemetry Error: #{e}")
-        return false if retry_count >= PING_RETRY_THRESHOLD
+        return false if retry_count >= Monitor::PING_RETRY_THRESHOLD
         # apply a backoff before sending the next ping
         sleep(retry_count * 1.5 * rand)
         ping(params.merge(retry_count: params[:retry_count]+1))
@@ -135,9 +128,9 @@ module Cronitor
       resp = HTTParty.get(
         "#{monitor_api_url}/pause#{hours ? '/' + hours.to_s : ''}",
         timeout: 5,
-        headers: @@HEADERS,
+        headers: Cronitor._headers,
         basic_auth: {
-          username: Cronitor.api_key,
+          username: api_key,
           password: ''
         }
       )
@@ -164,11 +157,11 @@ module Cronitor
     private
 
     def fetch
-      if !api_key
-        raise Cronitor::Error("No API key detected. Set Cronitor.api_key or initialize Monitor with the api_key kwarg")
-      end
+      return Cronitor.logger.error(
+        "No API key detected. Set Cronitor.api_key or initialize Monitor with the api_key kwarg"
+      ) if !api_key
 
-      resp = HTTParty.get(monitor_api_url, timeout: 10, headers: @@HEADERS, format: :json)
+      resp = HTTParty.get(monitor_api_url, timeout: 10, headers: Cronitor._headers, format: :json)
     end
 
     def clean_params(params)
@@ -186,5 +179,13 @@ module Cronitor
 
   def self.symbolize_keys(obj)
     obj.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+  end
+
+  def self._headers
+    {
+     'Content-Type': 'application/json',
+     'User-Agent': 'cronitor-ruby',
+     'Cronitor-Version': Cronitor.api_version
+    }
   end
 end
