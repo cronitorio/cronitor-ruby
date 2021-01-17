@@ -1,4 +1,8 @@
 ---
+require:
+  - rubocop-rake
+  - rubocop-rspec
+
 Metrics/AbcSize:
   Enabled: false
 
