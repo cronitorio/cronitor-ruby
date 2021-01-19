@@ -2,14 +2,8 @@
 
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'cronitor'
-# require 'webmock/rspec'
-# require 'support/fake_cronitor'
-# WebMock.disable_net_connect! allow_localhost: true
 
 RSpec.configure do |config|
-  # config.before(:each) do
-  #   stub_request(:any, /cronitor.(io|link|ping)/).to_rack FakeCronitor
-  # end
 
   config.filter_run_excluding :type => 'functional' unless !ENV['CRONITOR_API_KEY'].nil?
 
