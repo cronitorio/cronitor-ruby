@@ -4,7 +4,6 @@ require:
   - rubocop-rspec
 
 AllCops:
-  TargetRubyVersion: 2.4
   NewCops: enable
   Exclude:
     - 'spec/cronitor_spec.rb'
