@@ -1,4 +1,11 @@
 ---
+require:
+  - rubocop-rake
+  - rubocop-rspec
+
+AllCops:
+  NewCops: enable
+
 Metrics/AbcSize:
   Enabled: false
 
