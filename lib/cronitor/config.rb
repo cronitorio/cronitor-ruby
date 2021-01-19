@@ -2,7 +2,9 @@
 
 module Cronitor
   class << self
-    attr_accessor :api_key, :api_version, :environment, :logger, :config, :_headers
+    attr_accessor :api_key, :api_version, :environment,
+                  :logger, :config, :_headers,
+                  :TYPE_JOB, :TYPE_EVENT, :TYPE_SYNTHETIC, :MONITOR_TYPES, :YAML_KEYS
 
     def configure(&block)
       block.call(self)

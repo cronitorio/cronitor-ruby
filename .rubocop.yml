@@ -33,3 +33,6 @@ Style/Documentation:
 Style/RaiseArgs:
   EnforcedStyle: compact
 
+Style/EachWithObject:
+  Enabled: false
+

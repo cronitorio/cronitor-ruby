@@ -185,7 +185,7 @@ module Cronitor
   end
 
   def self.symbolize_keys(obj)
-    obj.each_with_object({}) do |memo, (k, v)|
+    obj.inject({}) do |memo, (k, v)|
       memo[k.to_sym] = v
       memo
     end
