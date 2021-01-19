@@ -2,11 +2,11 @@
 
 module Cronitor
   class Monitor
-    attr_reader :key, :data, :api_key, :api_version, :env
+    attr_reader :key, :api_key, :api_version, :env
 
     PING_RETRY_THRESHOLD = 5
 
-    def self.put(opts={})
+    def self.put(opts = {})
       rollback = opts[:rollback] || false
       opts.delete(:rollback)
 
@@ -26,17 +26,18 @@ module Cronitor
         timeout: 10
       )
 
-      if resp.code == 200
-        _monitors = []
+      case resp.code
+      when 200
+        out = []
         data = JSON.parse(resp.body)
 
-        (data['monitors']||[]).each do |md|
+        (data['monitors'] || []).each do |md|
           m = Monitor.new(md['key'])
           m.data = Cronitor.symbolize_keys(md)
-          _monitors << m
+          out << m
         end
-        return _monitors.length == 1 ? _monitors[0] : _monitors
-      elsif resp.code == 400
+        out.length == 1 ? out[0] : out
+      when 400
         raise ValidationError.new(resp.body)
       else
         raise Error.new("Error connecting to Cronitor: #{resp.code}")
@@ -68,8 +69,9 @@ module Cronitor
 
     def data
       return @data if defined?(@data)
-      data = fetch
-      data
+
+      @data = fetch
+      @data
     end
 
     def data=(data)
@@ -79,44 +81,43 @@ module Cronitor
     def ping(params = {})
       retry_count = params[:retry_count] || 0
       if api_key.nil?
-        Cronitor.logger.error("No API key detected. Set Cronitor.api_key or initialize Monitor with an api_key:")
+        Cronitor.logger.error('No API key detected. Set Cronitor.api_key or initialize Monitor with an api_key:')
         return false
       end
 
       begin
         ping_url = ping_api_url
-        if retry_count > (PING_RETRY_THRESHOLD / 2)
-          ping_url = fallback_ping_api_url
-        end
+        ping_url = fallback_ping_api_url if retry_count > (PING_RETRY_THRESHOLD / 2)
 
         response = HTTParty.get(
           ping_url,
           query: clean_params(params),
           timeout: 5,
           headers: Cronitor._headers,
-          query_string_normalizer: -> (query) {
+          query_string_normalizer: lambda do |query|
             query.compact!
             metrics = query[:metric]
             query.delete(:metric)
-            out = query.map{|k, v| "#{k}=#{v}"}
-            out += metrics.map{|m| "metric=#{m}"} if !metrics.nil?
+            out = query.map { |k, v| "#{k}=#{v}" }
+            out += metrics.map { |m| "metric=#{m}" } unless metrics.nil?
             out.join('&')
-          } # query_string_normalizer for metrics. instead of metric[]=foo:1 we want metric=foo:1
-
+          end
+          # query_string_normalizer for metrics. instead of metric[]=foo:1 we want metric=foo:1
         )
 
         if response.code != 200
           Cronitor.logger.error("Cronitor Telemetry Error: #{response.code}")
           return false
         end
-        return true
+        true
       rescue StandardError => e
         # rescue instances of StandardError i.e. Timeout::Error, SocketError, etc
         Cronitor.logger.error("Cronitor Telemetry Error: #{e}")
         return false if retry_count >= Monitor::PING_RETRY_THRESHOLD
+
         # apply a backoff before sending the next ping
         sleep(retry_count * 1.5 * rand)
-        ping(params.merge(retry_count: params[:retry_count]+1))
+        ping(params.merge(retry_count: params[:retry_count] + 1))
       end
     end
 
@@ -124,9 +125,12 @@ module Cronitor
       ping(state: 'ok')
     end
 
-    def pause(hours=nil)
+    def pause(hours = nil)
+      pause_url = "#{monitor_api_url}/pause"
+      pause_url += "/#{hours}" unless hours.nil?
+
       resp = HTTParty.get(
-        "#{monitor_api_url}/pause#{hours ? '/' + hours.to_s : ''}",
+        pause_url,
         timeout: 5,
         headers: Cronitor._headers,
         basic_auth: {
@@ -157,29 +161,33 @@ module Cronitor
     private
 
     def fetch
-      if !api_key
+      unless api_key
         Cronitor.logger.error(
-          "No API key detected. Set Cronitor.api_key or initialize Monitor with the api_key kwarg"
+          'No API key detected. Set Cronitor.api_key or initialize Monitor with the api_key kwarg'
         )
+        return
       end
 
-      resp = HTTParty.get(monitor_api_url, timeout: 10, headers: Cronitor._headers, format: :json)
+      HTTParty.get(monitor_api_url, timeout: 10, headers: Cronitor._headers, format: :json)
     end
 
     def clean_params(params)
       {
-          state: params.fetch(:state, nil),
-          message: params.fetch(:message, nil),
-          series: params.fetch(:series, nil),
-          host: params.fetch(:host, Socket.gethostname),
-          metric: params[:metrics] ? params[:metrics].map{|k, v| "#{k}:#{v}"} : nil,
-          stamp: Time.now.to_f,
-          env: params.fetch(:env, env)
+        state: params.fetch(:state, nil),
+        message: params.fetch(:message, nil),
+        series: params.fetch(:series, nil),
+        host: params.fetch(:host, Socket.gethostname),
+        metric: params[:metrics] ? params[:metrics].map { |k, v| "#{k}:#{v}" } : nil,
+        stamp: Time.now.to_f,
+        env: params.fetch(:env, env)
       }
     end
   end
 
   def self.symbolize_keys(obj)
-    obj.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+    obj.each_with_object({}) do |memo, (k, v)|
+      memo[k.to_sym] = v
+      memo
+    end
   end
 end

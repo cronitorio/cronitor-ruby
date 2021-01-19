@@ -4,8 +4,7 @@ $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'cronitor'
 
 RSpec.configure do |config|
-
-  config.filter_run_excluding :type => 'functional' unless !ENV['CRONITOR_API_KEY'].nil?
+  config.filter_run_excluding type: 'functional' if ENV['CRONITOR_API_KEY'].nil?
 
   config.expect_with :rspec do |expectations|
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true

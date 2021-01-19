@@ -9,5 +9,4 @@ module Cronitor
 
   class ConfigurationError < Error
   end
-
 end
