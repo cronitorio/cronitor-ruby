@@ -5,6 +5,8 @@ require:
 
 AllCops:
   NewCops: enable
+  Exclude:
+    - 'spec/cronitor_spec.rb'
 
 Metrics/AbcSize:
   Enabled: false
