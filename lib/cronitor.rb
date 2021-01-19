@@ -86,6 +86,21 @@ module Cronitor
     apply_config(rollback: true)
   end
 
+  def self.job(key, &block)
+    monitor = Monitor.new(key)
+    series = Time.now.to_f
+    monitor.ping(state: 'run', series: series)
+
+    begin
+      out = block.call
+      monitor.ping(state: 'complete', series: series)
+    rescue Exception => e
+      monitor.ping(state: 'fail', message: e.message[[0, e.message.length-1600].max..-1], series: series)
+      raise e
+    end
+  end
+
+
   def self.YAML_KEYS
     [
       'api_key',

@@ -20,7 +20,7 @@ MONITOR_2[:key] = 'another-test-key'
 
 RSpec.describe Cronitor do
 
-  describe '.configure' do
+  describe '#configure' do
     it 'sets the api_key, api_version, and env' do
       Cronitor.configure do |cronitor|
         cronitor.api_key = 'foo'
@@ -41,7 +41,7 @@ RSpec.describe Cronitor do
       end
     end
 
-    context '.read_config' do
+    context '#read_config' do
       context 'when no config path is set' do
         it 'raises a configuration exception' do
           Cronitor.config = nil
@@ -58,7 +58,7 @@ RSpec.describe Cronitor do
       end
     end
 
-    context '.apply_config' do
+    context '#apply_config' do
       context 'when no config path is set' do
         it 'raises a ConfigurationError' do
           Cronitor.config = nil
@@ -76,7 +76,7 @@ RSpec.describe Cronitor do
       end
     end
 
-    context '.validate_config' do
+    context '#validate_config' do
       context 'when no config path is set' do
         it 'raises a ConfigurationError' do
           Cronitor.config = nil
@@ -92,7 +92,32 @@ RSpec.describe Cronitor do
         Cronitor.validate_config()
       end
     end
+  end
 
+  describe '#job' do
+    context 'when no errors are raise' do
+      it 'pings run and complete states' do
+        expect_any_instance_of(Cronitor::Monitor).to receive(:ping).with(hash_including(state: 'run')).and_return(true)
+        expect_any_instance_of(Cronitor::Monitor).to receive(:ping).with(hash_including(state: 'complete')).and_return(true)
+
+        Cronitor.job 'test-job' do
+          puts("I am a test job")
+        end
+      end
+    end
+
+    context "when an error is raised" do
+      it 'pings run and fail states' do
+        expect_any_instance_of(Cronitor::Monitor).to receive(:ping).with(hash_including(state: 'run')).and_return(true)
+        expect_any_instance_of(Cronitor::Monitor).to receive(:ping).with(hash_including(state: 'fail')).and_return(true)
+
+        expect {
+          Cronitor.job 'test-job' do
+            raise StandardError.new("I am failing")
+          end
+        }.to raise_error(StandardError)
+      end
+    end
   end
 
   describe 'Telemetry API' do
@@ -165,13 +190,13 @@ RSpec.describe Cronitor do
       end
     end
 
-    context '.new' do
+    context '#new' do
       it 'has the expected key' do
         expect(Cronitor::Monitor.new('test-key').key).to eq 'test-key'
       end
     end
 
-    context '.put' do
+    context '#put' do
       it 'should create a monitor' do
         expect(HTTParty).to receive(:put).and_return(
           instance_double(HTTParty::Response, code: 200, body: {'monitors': [MONITOR]}.to_json)
