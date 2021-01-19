@@ -12,17 +12,18 @@ See our [API docs](https://cronitor.io/docs/api) for a detailed reference inform
 ## Installation
 
 ```
-pip install cronitor
+gem install cronitor
 ```
 
 ## Usage
 
-The package needs to be configured with your account's `API key`, which is available on the [account settings](https://cronitor.io/settings) page. You can also optionally specify an `Api Version` (default: account default) and `Environment` (default: account default).
+The package needs to be configured with your account's `API key`, which is available on the [account settings](https://cronitor.io/settings) page. You can also optionally specify an `API Version` (default: account default) and `Environment` (default: account default).
 
 These can be supplied using the environment variables `CRONITOR_API_KEY`, `CRONITOR_API_VERSION`, `CRONITOR_ENVIRONMENT` or set directly on the cronitor object.
 
 ```ruby
 require 'cronitor'
+
 Cronitor.api_key = 'apiKey123'
 Cronitor.api_version = '2020-10-01'
 Cronitor.environment = 'staging'
@@ -31,14 +32,20 @@ Cronitor.environment = 'staging'
 You can also use a YAML config file to manage all of your monitors (_see Create and Update Monitors section below_). The path to this file can be supplied using the enviroment variable `CRONITOR_CONFIG` or call `cronitor.read_config()`.
 
 ```ruby
-import cronitor
-cronitor.read_config('./path/to/cronitor.yaml')
+require 'cronitor'
+
+Cronitor.read_config('./path/to/cronitor.yaml')
 ```
 
 
 ### Monitor Any Block
-```
-cronitor.job 'warehouse-replenishmenth-report' do
+
+The quickest way to start using this library is to wrap a block of code with the `#job` helper. It will report the start time, end time, and exit state to Cronitor. If an exception is raised, the stack trace will be included in the failure message.
+
+```ruby
+require 'cronitor'
+
+Cronitor.job 'warehouse-replenishmenth-report' do
   ReplenishmentReport.new(Date.today).run()
 end
 ```
@@ -46,7 +53,7 @@ end
 ### Sending Telemetry Events
 
 If you want finer control over when/how [telemetry pings](https://cronitor.io/docs/telemetry-api) are sent,
-you can instantiate a monitor and call `.ping`.
+you can instantiate a monitor and call `#ping`.
 
 ```ruby
 require 'cronitor'
@@ -68,7 +75,7 @@ monitor.ping(state: 'complete', metrics: {count: 1000, error_count: 17})
 ### Pause, Reset, Delete
 
 ```ruby
-import cronitor
+require 'cronitor'
 
 monitor = Cronitor::Monitor.new('heartbeat-monitor')
 
@@ -219,5 +226,5 @@ Push to your fork and [submit a pull request]( https://github.com/cronitorio/cro
 
 The bump gem makes this easy:
 
-1. rake bump:(major|minor|patch|pre)
-2. rake release
+1. `rake bump:(major|minor|patch|pre)`
+2. `rake release`
