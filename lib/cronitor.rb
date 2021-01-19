@@ -93,10 +93,6 @@ module Cronitor
       'environment'
     ] + self.MONITOR_TYPES.map{|t| "#{t}s" }
   end
-
-  def encode(input)
-    CGI.escape(input).gsub('+', '%20')
-  end
 end
 
 Cronitor.read_config(Cronitor.config) if !Cronitor.config.nil?

@@ -85,7 +85,7 @@ module Cronitor
 
       begin
         ping_url = ping_api_url
-        if retry_count > PING_RETRY_THRESHOLD/2
+        if retry_count > (PING_RETRY_THRESHOLD / 2)
           ping_url = fallback_ping_api_url
         end
 
@@ -157,9 +157,11 @@ module Cronitor
     private
 
     def fetch
-      return Cronitor.logger.error(
-        "No API key detected. Set Cronitor.api_key or initialize Monitor with the api_key kwarg"
-      ) if !api_key
+      if !api_key
+        Cronitor.logger.error(
+          "No API key detected. Set Cronitor.api_key or initialize Monitor with the api_key kwarg"
+        )
+      end
 
       resp = HTTParty.get(monitor_api_url, timeout: 10, headers: Cronitor._headers, format: :json)
     end
@@ -179,13 +181,5 @@ module Cronitor
 
   def self.symbolize_keys(obj)
     obj.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
-  end
-
-  def self._headers
-    {
-     'Content-Type': 'application/json',
-     'User-Agent': 'cronitor-ruby',
-     'Cronitor-Version': Cronitor.api_version
-    }
   end
 end
