@@ -13,9 +13,6 @@ require 'cronitor/version'
 require 'cronitor/monitor'
 
 module Cronitor
-  def self.monitor_api_url
-    'https://cronitor.io/api/monitors'
-  end
 
   def self.read_config(path = nil, output: false)
     Cronitor.config = path || Cronitor.config
@@ -28,7 +25,7 @@ module Cronitor
 
     conf = YAML.safe_load(File.read(Cronitor.config))
     conf.each do |k, _v|
-      raise ConfigurationError.new("Invalid configuration variable: #{k}") unless Cronitor.YAML_KEYS.include?(k)
+      raise ConfigurationError.new("Invalid configuration variable: #{k}") unless Cronitor::YAML_KEYS.include?(k)
     end
 
     Cronitor.api_key     = conf[:api_key] if conf[:api_key]
@@ -38,7 +35,7 @@ module Cronitor
     return unless output
 
     monitors = []
-    self.MONITOR_TYPES.each do |t|
+    Cronitor::MONITOR_TYPES.each do |t|
       plural_t = "#{t}s"
       to_parse = conf[t] || conf[plural_t] || nil
       next unless to_parse
@@ -81,6 +78,10 @@ module Cronitor
       monitor.ping(state: 'fail', message: e.message[[0, e.message.length - 1600].max..-1], series: series)
       raise e
     end
+  end
+
+  def self.monitor_api_url
+    'https://cronitor.io/api/monitors'
   end
 end
 
