@@ -13,7 +13,6 @@ require 'cronitor/version'
 require 'cronitor/monitor'
 
 module Cronitor
-
   def self.read_config(path = nil, output: false)
     Cronitor.config = path || Cronitor.config
     unless Cronitor.config

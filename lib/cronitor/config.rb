@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 module Cronitor
-
   TYPE_JOB = 'job'
   TYPE_EVENT = 'event'
   TYPE_SYNTHETIC = 'synthetic'
