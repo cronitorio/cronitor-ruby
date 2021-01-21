@@ -7,6 +7,7 @@ AllCops:
   NewCops: enable
   Exclude:
     - 'spec/cronitor_spec.rb'
+    - 'vendor/*'
 
 Metrics/AbcSize:
   Enabled: false
