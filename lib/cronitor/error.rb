@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
-class Cronitor
+module Cronitor
   class Error < StandardError
+  end
+
+  class ValidationError < Error
+  end
+
+  class ConfigurationError < Error
   end
 end

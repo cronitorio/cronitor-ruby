@@ -3,10 +3,19 @@ require:
   - rubocop-rake
   - rubocop-rspec
 
+inherit_mode:
+  merge:
+    - Exclude
+
 AllCops:
   NewCops: enable
+  Exclude:
+    - 'spec/cronitor_spec.rb'
 
 Metrics/AbcSize:
+  Enabled: false
+
+Metrics/ClassLength:
   Enabled: false
 
 Metrics/BlockLength:
@@ -15,8 +24,18 @@ Metrics/BlockLength:
 Metrics/CyclomaticComplexity:
   Enabled: false
 
+Metrics/PerceivedComplexity:
+  Enabled: false
+
 Metrics/MethodLength:
   Enabled: false
 
 Style/Documentation:
   Enabled: false
+
+Style/RaiseArgs:
+  EnforcedStyle: compact
+
+Style/EachWithObject:
+  Enabled: false
+

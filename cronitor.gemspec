@@ -7,11 +7,13 @@ require 'cronitor/version'
 Gem::Specification.new do |spec|
   spec.name        = 'cronitor'
   spec.version     = Cronitor::VERSION
-  spec.authors     = ['Jeff Byrnes']
-  spec.email       = ['thejeffbyrnes@gmail.com']
+  spec.authors     = ['Jeff Byrnes', 'August Flanagan']
+  spec.email       = ['thejeffbyrnes@gmail.com', 'august@cronitor.io']
 
   spec.summary     = 'An interface for the Cronitor API'
-  spec.homepage    = 'https://github.com/evertrue/cronitor'
+  spec.homepage    = 'https://github.com/cronitorio/cronitor-ruby'
+
+  spec.required_ruby_version = '>= 2.4'
 
   spec.files = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
@@ -19,6 +21,8 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
+
+  spec.add_runtime_dependency 'httparty'
 
   spec.add_development_dependency 'bump', '~> 0.1'
   spec.add_development_dependency 'bundler'
