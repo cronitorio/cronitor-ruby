@@ -4,10 +4,17 @@
 [![Gem Version](https://badge.fury.io/rb/cronitor.svg)](https://badge.fury.io/rb/cronitor)
 
 
-[Cronitor](https://cronitor.io/) provides dead simple monitoring for cron jobs, daemons, data pipelines, queue workers, and anything else that can send or receive an HTTP request. The Cronitor Ruby library provides convenient access to the Cronitor API from applications written in Ruby.
+[Cronitor](https://cronitor.io/) provides dead simple monitoring for cron jobs, daemons, queue workers, websites, APIs, and anything else that can send or receive an HTTP request. The Cronitor Ruby library provides convenient access to the Cronitor API from applications written in Ruby. See our [API docs](https://cronitor.io/docs/api) for detailed references on configuring monitors and sending telemetry pings.
 
-## Documentation
-See our [API docs](https://cronitor.io/docs/api) for a detailed reference information about the APIs this library uses for configuring monitors and sending telemetry pings.
+In this guide:
+
+- [Installation](##Installation)
+- [Monitoring Background Jobs](##monitoring-background-jobs)
+- [Sending Telemetry Events](##sending-telemetry-events)
+- [Configuring Monitors](##configuring-monitors)
+- [Package Configuration & Env Vars](##package-configuration)
+- [Command Line Usage](##command-line-usage)
+- [Contributing](##contributing)
 
 ## Installation
 
@@ -15,49 +22,31 @@ See our [API docs](https://cronitor.io/docs/api) for a detailed reference inform
 gem install cronitor
 ```
 
-## Usage
+## Monitoring Background Jobs
 
-The package needs to be configured with your account's `API key`, which is available on the [account settings](https://cronitor.io/settings) page. You can also optionally specify an `API Version` (default: account default) and `Environment` (default: account default).
-
-These can be supplied using the environment variables `CRONITOR_API_KEY`, `CRONITOR_API_VERSION`, `CRONITOR_ENVIRONMENT` or set directly on the cronitor object.
+The `Cronitor#job` helper will send telemetry events before calling your block and after it exits. If your block raises an exception a `fail` event will be sent (and the exception re-raised).
 
 ```ruby
 require 'cronitor'
-
-Cronitor.api_key = 'apiKey123'
-Cronitor.api_version = '2020-10-01'
-Cronitor.environment = 'staging'
-```
-
-You can also use a YAML config file to manage all of your monitors (_see Create and Update Monitors section below_). The path to this file can be supplied using the enviroment variable `CRONITOR_CONFIG` or call `cronitor.read_config()`.
-
-```ruby
-require 'cronitor'
-
-Cronitor.read_config('./path/to/cronitor.yaml')
-```
-
-
-### Monitor Any Block
-
-The quickest way to start using this library is to wrap a block of code with the `#job` helper. It will report the start time, end time, and exit state to Cronitor. If an exception is raised, the stack trace will be included in the failure message.
-
-```ruby
-require 'cronitor'
+Cronitor.api_key = 'api_key_123'
 
 Cronitor.job 'warehouse-replenishmenth-report' do
   ReplenishmentReport.new(Date.today).run()
 end
 ```
 
-### Sending Telemetry Events
+### Integrating with Sidekiq
+Cronitor provides a [separate library](https://github.com/cronitorio/cronitor-sidekiq) built with this SDK to make Sidekiq integration even easier.
+
+
+## Sending Telemetry Events
 
 If you want finer control over when/how [telemetry pings](https://cronitor.io/docs/telemetry-api) are sent,
 you can instantiate a monitor and call `#ping`.
 
 ```ruby
 require 'cronitor'
-
+Cronitor.api_key = 'api_key_123'
 
 monitor = Cronitor::Monitor.new('heartbeat-monitor')
 
@@ -72,57 +61,14 @@ monitor.ping(state: 'run', env: 'staging') # a job/process has started in a stag
 monitor.ping(state: 'complete', metrics: {count: 1000, error_count: 17})
 ```
 
-### Pause, Reset, Delete
+## Configuring Monitors
+
+You can configure all of your monitors using a single YAML file. This can be version controlled and synced to Cronitor as part of
+a deployment or build process. For details on all of the attributes that can be set, see the [Monitor API](https://cronitor.io/docs/monitor-api) documentation.
 
 ```ruby
 require 'cronitor'
-
-monitor = Cronitor::Monitor.new('heartbeat-monitor')
-
-monitor.pause(24) # pause alerting for 24 hours
-monitor.unpause # alias for .pause(0)
-monitor.ok # manually reset to a passing state alias for monitor.ping({state: ok})
-monitor.delete # destroy the monitor
-```
-
-## Create and Update Monitors
-
-You can create monitors programatically using the `Monitor` object.
-For details on all of the attributes that can be set see the [Monitor API](https://cronitor.io/docs/monitor-api) documentation.
-
-
-```ruby
-require 'cronitor'
-
-monitors = Cronitor::Monitor.put([
-  {
-    type: 'job',
-    key: 'send-customer-invoices',
-    schedule: '0 0 * * *',
-    assertions: [
-        'metric.duration < 5 min'
-    ],
-    notify: ['devops-alerts-slack']
-  },
-  {
-    type: 'synthetic',
-    key: 'Orders Api Uptime',
-    schedule: 'every 45 seconds',
-    assertions: [
-        'response.code = 200',
-        'response.time < 1.5s',
-        'response.json "open_orders" < 2000'
-    ]
-  }
-])
-```
-
-You can also manage all of your monitors via a YAML config file.
-This can be version controlled and synced to Cronitor as part of
-a deployment process or system update.
-
-```ruby
-require 'cronitor'
+Cronitor.api_key = 'api_key_123'
 
 # read config file and set credentials (if included).
 Cronitor.read_config('./cronitor.yaml')
@@ -135,14 +81,9 @@ Cronitor.apply_config
 Cronitor.validate_config
 ```
 
-
 The `cronitor.yaml` file accepts the following attributes:
 
 ```yaml
-api_key: 'optionally read Cronitor api_key from here'
-api_version: 'optionally read Cronitor api_version from here'
-environment: 'optionally set an environment for telemetry pings'
-
 # configure all of your monitors with type "job"
 # you may omit the type attribute and the key
 # of each object will be set as the monitor key
@@ -188,6 +129,59 @@ events:
 
 ```
 
+You can also create and update monitors by calling `Monitor.put`.
+
+```ruby
+require 'cronitor'
+
+monitors = Cronitor::Monitor.put([
+  {
+    type: 'job',
+    key: 'send-customer-invoices',
+    schedule: '0 0 * * *',
+    assertions: [
+        'metric.duration < 5 min'
+    ],
+    notify: ['devops-alerts-slack']
+  },
+  {
+    type: 'synthetic',
+    key: 'Orders Api Uptime',
+    schedule: 'every 45 seconds',
+    assertions: [
+        'response.code = 200',
+        'response.time < 1.5s',
+        'response.json "open_orders" < 2000'
+    ]
+  }
+])
+```
+
+### Pause, Reset, Delete
+
+```ruby
+require 'cronitor'
+
+monitor = Cronitor::Monitor.new('heartbeat-monitor')
+
+monitor.pause(24) # pause alerting for 24 hours
+monitor.unpause # alias for .pause(0)
+monitor.ok # manually reset to a passing state alias for monitor.ping({state: ok})
+monitor.delete # destroy the monitor
+```
+
+## Package Configuration
+
+The package needs to be configured with your account's `API key`, which is available on the [account settings](https://cronitor.io/settings) page. You can also optionally specify an `api_version` and an `environment`. If not provided, your account default is used. These can also be supplied using the environment variables `CRONITOR_API_KEY`, `CRONITOR_API_VERSION`, `CRONITOR_ENVIRONMENT`.
+
+```ruby
+require 'cronitor'
+
+# your api keys can found here - https://cronitor.io/settings
+Cronitor.api_key = 'apiKey123'
+Cronitor.api_version = '2020-10-01'
+Cronitor.environment = 'cluster_1_prod'
+```
 
 ## Contributing
 
