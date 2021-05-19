@@ -9,6 +9,7 @@ inherit_mode:
 
 AllCops:
   NewCops: enable
+  TargetRubyVersion: 2.4
   Exclude:
     - 'spec/cronitor_spec.rb'
 
