@@ -81,12 +81,9 @@ Cronitor.apply_config
 Cronitor.validate_config
 ```
 
-The `cronitor.yaml` file accepts the following attributes:
+The `cronitor.yaml` file includes three top level keys `jobs`, `checks`, `events`. You can configure monitors under each key by defining [monitors](https://cronitor.io/docs/monitor-api#attributes).
 
 ```yaml
-# configure all of your monitors with type "job"
-# you may omit the type attribute and the key
-# of each object will be set as the monitor key
 jobs:
     nightly-database-backup:
         schedule: 0 0 * * *
@@ -101,8 +98,7 @@ jobs:
             - metric.count > 0
             - metric.duration < 30 seconds
 
-# configure all of your monitors with type "synthetic"
-synthetics:
+check:
     cronitor-homepage:
         request:
             url: https://cronitor.io
@@ -121,7 +117,7 @@ synthetics:
             - response.body contains ok
             - response.time < .25s
 
-events:
+heartbeats:
     production-deploy:
         notify:
             alerts: ['deploys-slack']
@@ -145,7 +141,7 @@ monitors = Cronitor::Monitor.put([
     notify: ['devops-alerts-slack']
   },
   {
-    type: 'synthetic',
+    type: 'check',
     key: 'Orders Api Uptime',
     schedule: 'every 45 seconds',
     assertions: [
