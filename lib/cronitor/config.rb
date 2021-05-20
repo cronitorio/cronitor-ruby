@@ -4,7 +4,7 @@ module Cronitor
   TYPE_JOB = 'job'
   TYPE_HEARTBEAT = 'heartbeat'
   TYPE_CHECK = 'check'
-  MONITOR_TYPES = [TYPE_JOB, TYPE_EVENT, TYPE_SYNTHETIC].freeze
+  MONITOR_TYPES = [TYPE_JOB, TYPE_HEARTBEAT, TYPE_CHECK].freeze
   YAML_KEYS = %w[
     api_key
     api_version
