@@ -142,12 +142,14 @@ monitors = Cronitor::Monitor.put([
   },
   {
     type: 'check',
-    key: 'Orders Api Uptime',
+    key: 'Cronitor Homepage',
+    request: {
+        url: 'https://cronitor.io'
+    },
     schedule: 'every 45 seconds',
     assertions: [
         'response.code = 200',
-        'response.time < 1.5s',
-        'response.json "open_orders" < 2000'
+        'response.time < 600ms',
     ]
   }
 ])
