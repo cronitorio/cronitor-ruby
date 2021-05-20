@@ -2,8 +2,8 @@
 
 module Cronitor
   TYPE_JOB = 'job'
-  TYPE_EVENT = 'event'
-  TYPE_SYNTHETIC = 'synthetic'
+  TYPE_HEARTBEAT = 'heartbeat'
+  TYPE_CHECK = 'check'
   MONITOR_TYPES = [TYPE_JOB, TYPE_EVENT, TYPE_SYNTHETIC].freeze
   YAML_KEYS = %w[
     api_key
