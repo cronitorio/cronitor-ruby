@@ -81,7 +81,7 @@ Cronitor.apply_config
 Cronitor.validate_config
 ```
 
-The `cronitor.yaml` file includes three top level keys `jobs`, `checks`, `events`. You can configure monitors under each key by defining [monitors](https://cronitor.io/docs/monitor-api#attributes).
+The `cronitor.yaml` file includes three top level keys `jobs`, `checks`, `heartbeats`. You can configure monitors under each key by defining [monitors](https://cronitor.io/docs/monitor-api#attributes).
 
 ```yaml
 jobs:
