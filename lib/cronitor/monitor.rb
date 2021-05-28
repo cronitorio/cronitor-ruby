@@ -117,7 +117,7 @@ module Cronitor
 
         # apply a backoff before sending the next ping
         sleep(retry_count * 1.5 * rand)
-        ping(params.merge(retry_count: params[:retry_count] + 1))
+        ping(params.merge(retry_count: retry_count + 1))
       end
     end
 
