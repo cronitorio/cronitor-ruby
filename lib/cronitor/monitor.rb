@@ -23,7 +23,7 @@ module Cronitor
           rollback: rollback
         }.to_json,
         headers: Cronitor._headers,
-        timeout: 10
+        timeout: opts[:timeout] || 10
       )
 
       case resp.code

@@ -69,7 +69,7 @@ RSpec.describe Cronitor do
       it 'makes a put request with a list of monitors and rollback: false' do
         data = Cronitor.read_config(SAMPLE_YAML_FILE, output: true)
         expect(Cronitor::Monitor).to receive(:put)
-          .with(monitors: data['monitors'], rollback: false)
+          .with(monitors: data['monitors'], rollback: false, timeout: 30)
           .and_return([data['monitors'].map{|m| Cronitor::Monitor.new(m['key'])}])
 
         Cronitor.apply_config()
@@ -87,7 +87,7 @@ RSpec.describe Cronitor do
       it 'makes a put request with a list of monitors and rollback: true' do
         data = Cronitor.read_config(SAMPLE_YAML_FILE, output: true)
         expect(Cronitor::Monitor).to receive(:put)
-          .with(monitors: data['monitors'], rollback: true)
+          .with(monitors: data['monitors'], rollback: true, timeout: 30)
           .and_return([data['monitors'].map{|m| Cronitor::Monitor.new(m['key'])}])
         Cronitor.validate_config()
       end
