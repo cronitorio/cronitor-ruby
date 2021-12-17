@@ -78,6 +78,9 @@ Cronitor.apply_config
 # send config file's monitors to Cronitor to validate correctness.
 # monitors will not be saved.
 Cronitor.validate_config
+
+# generate a new config file from the Cronitor API.
+Cronitor.generate_config
 ```
 
 The `cronitor.yaml` file includes three top level keys `jobs`, `checks`, `heartbeats`. You can configure monitors under each key by defining [monitors](https://cronitor.io/docs/monitor-api#attributes).
