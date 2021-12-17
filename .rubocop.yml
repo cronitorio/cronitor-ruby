@@ -12,6 +12,9 @@ AllCops:
   TargetRubyVersion: 2.5
   Exclude:
     - 'spec/cronitor_spec.rb'
+    
+RequireMFA: 
+  Enabled: false
 
 Metrics/AbcSize:
   Enabled: false
