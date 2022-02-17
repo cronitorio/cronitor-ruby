@@ -27,10 +27,6 @@ module Cronitor
       raise ConfigurationError.new("Invalid configuration variable: #{k}") unless Cronitor::YAML_KEYS.include?(k)
     end
 
-    Cronitor.api_key     = conf[:api_key] if conf[:api_key]
-    Cronitor.api_version = conf[:api_version] if conf[:api_version]
-    Cronitor.environment = conf[:environment] if conf[:environment]
-
     return unless output
 
     monitors = []

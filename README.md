@@ -69,7 +69,7 @@ a deployment or build process. For details on all of the attributes that can be 
 require 'cronitor'
 Cronitor.api_key = 'api_key_123'
 
-# read config file and set credentials (if included).
+# read config file.
 Cronitor.read_config('./cronitor.yaml')
 
 # sync config file's monitors to Cronitor.

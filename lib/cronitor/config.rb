@@ -1,15 +1,12 @@
 # frozen_string_literal: true
 
 module Cronitor
-  TYPE_JOB = 'job'
-  TYPE_HEARTBEAT = 'heartbeat'
-  TYPE_CHECK = 'check'
-  MONITOR_TYPES = [TYPE_JOB, TYPE_HEARTBEAT, TYPE_CHECK].freeze
-  YAML_KEYS = %w[
-    api_key
-    api_version
-    environment
-  ] + MONITOR_TYPES.map { |t| "#{t}s" }
+  MONITOR_TYPES = [
+    TYPE_JOB = 'job',
+    TYPE_HEARTBEAT = 'heartbeat',
+    TYPE_CHECK = 'check',
+  ].freeze
+  YAML_KEYS = MONITOR_TYPES.map { |t| "#{t}s" }
 
   class << self
     attr_accessor :api_key, :api_version, :environment, :logger, :config, :_headers
