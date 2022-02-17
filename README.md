@@ -181,6 +181,11 @@ require 'cronitor'
 Cronitor.api_key = 'apiKey123'
 Cronitor.api_version = '2020-10-01'
 Cronitor.environment = 'cluster_1_prod'
+
+Cronitor.timeout = 20 # defaults to 10 can also be set with ENV['CRONITOR_TIMEOUT']
+Cronitor.logger = nil # defaults to Logger.new($stdout)
+# faster timeout for potentially more time sensitive call
+Cronitor.ping_timeout = 10 # defaults to 5 can also be set with ENV['CRONITOR_PING_TIMEOUT']
 ```
 
 ## Contributing

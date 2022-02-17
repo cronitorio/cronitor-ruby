@@ -51,8 +51,9 @@ module Cronitor
 
   def self.apply_config(rollback: false)
     conf = read_config(output: true)
-    # allow a significantly longer timeout on requests that are sending full yaml config
-    monitors = Monitor.put(monitors: conf.fetch('monitors', []), rollback: rollback, timeout: 30)
+    # allow a significantly longer timeout on requests that are sending full yaml config. min 30 seconds.
+    timeout = Cronitor.timeout < 30 ? 30 : Cronitor.timeout
+    monitors = Monitor.put(monitors: conf.fetch('monitors', []), rollback: rollback, timeout: timeout)
     puts("#{monitors.length} monitors #{rollback ? 'validated' : 'synced to Cronitor'}.")
   rescue ValidationError => e
     Cronitor.logger&.error(e)

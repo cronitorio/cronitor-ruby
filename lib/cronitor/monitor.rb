@@ -23,7 +23,7 @@ module Cronitor
           rollback: rollback
         }.to_json,
         headers: Cronitor._headers,
-        timeout: opts[:timeout] || 10
+        timeout: opts[:timeout] || Cronitor.timeout
       )
 
       case resp.code
@@ -47,7 +47,7 @@ module Cronitor
     def self.delete(key)
       resp = HTTParty.delete(
         "#{Cronitor.monitor_api_url}/#{key}",
-        timeout: 10,
+        timeout: Cronitor.timeout,
         basic_auth: {
           username: Cronitor.api_key,
           password: ''
@@ -92,7 +92,7 @@ module Cronitor
         response = HTTParty.get(
           ping_url,
           query: clean_params(params),
-          timeout: 5,
+          timeout: Cronitor.ping_timeout,
           headers: Cronitor._headers,
           query_string_normalizer: lambda do |query|
             query.compact!
@@ -131,7 +131,7 @@ module Cronitor
 
       resp = HTTParty.get(
         pause_url,
-        timeout: 5,
+        timeout: Cronitor.timeout,
         headers: Cronitor._headers,
         basic_auth: {
           username: api_key,
@@ -168,7 +168,7 @@ module Cronitor
         return
       end
 
-      HTTParty.get(monitor_api_url, timeout: 10, headers: Cronitor._headers, format: :json)
+      HTTParty.get(monitor_api_url, timeout: Cronitor.timeout, headers: Cronitor._headers, format: :json)
     end
 
     def clean_params(params)
