@@ -55,7 +55,7 @@ module Cronitor
         headers: Cronitor._headers
       )
       if resp.code != 204
-        Cronitor.logger.error("Error deleting monitor: #{key}")
+        Cronitor.logger&.error("Error deleting monitor: #{key}")
         return false
       end
       true
@@ -81,7 +81,7 @@ module Cronitor
     def ping(params = {})
       retry_count = params[:retry_count] || 0
       if api_key.nil?
-        Cronitor.logger.error('No API key detected. Set Cronitor.api_key or initialize Monitor with an api_key:')
+        Cronitor.logger&.error('No API key detected. Set Cronitor.api_key or initialize Monitor with an api_key:')
         return false
       end
 
@@ -106,13 +106,13 @@ module Cronitor
         )
 
         if response.code != 200
-          Cronitor.logger.error("Cronitor Telemetry Error: #{response.code}")
+          Cronitor.logger&.error("Cronitor Telemetry Error: #{response.code}")
           return false
         end
         true
       rescue StandardError => e
         # rescue instances of StandardError i.e. Timeout::Error, SocketError, etc
-        Cronitor.logger.error("Cronitor Telemetry Error: #{e}")
+        Cronitor.logger&.error("Cronitor Telemetry Error: #{e}")
         return false if retry_count >= Monitor::PING_RETRY_THRESHOLD
 
         # apply a backoff before sending the next ping
@@ -162,7 +162,7 @@ module Cronitor
 
     def fetch
       unless api_key
-        Cronitor.logger.error(
+        Cronitor.logger&.error(
           'No API key detected. Set Cronitor.api_key or initialize Monitor with the api_key kwarg'
         )
         return

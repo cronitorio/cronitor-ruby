@@ -55,7 +55,7 @@ module Cronitor
     monitors = Monitor.put(monitors: conf.fetch('monitors', []), rollback: rollback, timeout: 30)
     puts("#{monitors.length} monitors #{rollback ? 'validated' : 'synced to Cronitor'}.")
   rescue ValidationError => e
-    Cronitor.logger.error(e)
+    Cronitor.logger&.error(e)
   end
 
   def self.validate_config
