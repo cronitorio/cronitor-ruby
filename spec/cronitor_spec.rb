@@ -4,6 +4,7 @@ require 'spec_helper'
 
 FAKE_API_KEY = 'fake_api_key'
 SAMPLE_YAML_FILE = './spec/support/cronitor.yaml'
+BAD_CONFIG_YAML_FILE = './spec/support/bad_config.yaml'
 
 MONITOR = {
   type: 'job',
@@ -51,9 +52,16 @@ RSpec.describe Cronitor do
 
       context 'when a valid yaml file is supplied' do
         it 'returns a list of monitors' do
-          data = Cronitor.read_config(SAMPLE_YAML_FILE, output: true)
-          expect(data).to include('monitors')
-          expect(data['monitors'].length == 5)
+          data = Cronitor.read_config(SAMPLE_YAML_FILE)
+          expect(data).to eq YAML.safe_load(File.read(Cronitor.config))
+          expect(data.length == 3)
+        end
+      end
+
+      context 'when an invalid yaml file is supplied' do
+        it 'raises an exception' do
+          expect { Cronitor.read_config(BAD_CONFIG_YAML_FILE) }.to raise_error(Cronitor::ConfigurationError)
+          expect(Cronitor.config).to eq BAD_CONFIG_YAML_FILE
         end
       end
     end
@@ -67,10 +75,10 @@ RSpec.describe Cronitor do
       end
 
       it 'makes a put request with a list of monitors and rollback: false' do
-        data = Cronitor.read_config(SAMPLE_YAML_FILE, output: true)
+        data = Cronitor.read_config(SAMPLE_YAML_FILE)
         expect(Cronitor::Monitor).to receive(:put)
-          .with(monitors: data['monitors'], rollback: false, timeout: 30)
-          .and_return([data['monitors'].map{|m| Cronitor::Monitor.new(m['key'])}])
+          .with(monitors: data, format: Cronitor::Monitor::Formats::YAML, rollback: false, timeout: 30)
+          .and_return(data)
 
         Cronitor.apply_config()
       end
@@ -85,10 +93,10 @@ RSpec.describe Cronitor do
       end
 
       it 'makes a put request with a list of monitors and rollback: true' do
-        data = Cronitor.read_config(SAMPLE_YAML_FILE, output: true)
+        data = Cronitor.read_config(SAMPLE_YAML_FILE)
         expect(Cronitor::Monitor).to receive(:put)
-          .with(monitors: data['monitors'], rollback: true, timeout: 30)
-          .and_return([data['monitors'].map{|m| Cronitor::Monitor.new(m['key'])}])
+          .with(monitors: data, format: Cronitor::Monitor::Formats::YAML, rollback: true, timeout: 30)
+          .and_return(data)
         Cronitor.validate_config()
       end
     end
@@ -165,7 +173,7 @@ RSpec.describe Cronitor do
             monitor.send(:ping_api_url),
             hash_including({
               query: hash_including(query),
-              headers: Cronitor._headers,
+              headers: Cronitor::Monitor::Headers::JSON,
               timeout: 5,
             })
           ).and_return(instance_double(HTTParty::Response, code: 200))
@@ -177,6 +185,7 @@ RSpec.describe Cronitor do
 
     context "when no api key is set" do
       it "logs an error to STDOUT" do
+        Cronitor.api_key = nil
         expect(Cronitor.logger).to receive(:error)
         monitor.ping()
       end
