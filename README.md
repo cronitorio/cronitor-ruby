@@ -69,7 +69,7 @@ a deployment or build process. For details on all of the attributes that can be 
 require 'cronitor'
 Cronitor.api_key = 'api_key_123'
 
-# read config file and set credentials (if included).
+# read config file.
 Cronitor.read_config('./cronitor.yaml')
 
 # sync config file's monitors to Cronitor.
@@ -181,6 +181,11 @@ require 'cronitor'
 Cronitor.api_key = 'apiKey123'
 Cronitor.api_version = '2020-10-01'
 Cronitor.environment = 'cluster_1_prod'
+
+Cronitor.timeout = 20 # defaults to 10 can also be set with ENV['CRONITOR_TIMEOUT']
+Cronitor.logger = nil # defaults to Logger.new($stdout)
+# faster timeout for potentially more time sensitive call
+Cronitor.ping_timeout = 10 # defaults to 5 can also be set with ENV['CRONITOR_PING_TIMEOUT']
 ```
 
 ## Contributing

@@ -13,7 +13,7 @@ require 'cronitor/version'
 require 'cronitor/monitor'
 
 module Cronitor
-  def self.read_config(path = nil, output: false)
+  def self.read_config(path = nil)
     Cronitor.config = path || Cronitor.config
     unless Cronitor.config
       raise ConfigurationError.new(
@@ -26,40 +26,23 @@ module Cronitor
     conf.each do |k, _v|
       raise ConfigurationError.new("Invalid configuration variable: #{k}") unless Cronitor::YAML_KEYS.include?(k)
     end
-
-    Cronitor.api_key     = conf[:api_key] if conf[:api_key]
-    Cronitor.api_version = conf[:api_version] if conf[:api_version]
-    Cronitor.environment = conf[:environment] if conf[:environment]
-
-    return unless output
-
-    monitors = []
-    Cronitor::MONITOR_TYPES.each do |t|
-      plural_t = "#{t}s"
-      to_parse = conf[t] || conf[plural_t] || nil
-      next unless to_parse
-
-      unless to_parse.is_a?(Hash)
-        raise ConfigurationError.new('A Hash with keys corresponding to monitor keys is expected.')
-      end
-
-      to_parse.each do |key, m|
-        m['key'] = key
-        m['type'] = t
-        monitors << m
-      end
-    end
-    conf['monitors'] = monitors
     conf
   end
 
   def self.apply_config(rollback: false)
-    conf = read_config(output: true)
-    # allow a significantly longer timeout on requests that are sending full yaml config
-    monitors = Monitor.put(monitors: conf.fetch('monitors', []), rollback: rollback, timeout: 30)
-    puts("#{monitors.length} monitors #{rollback ? 'validated' : 'synced to Cronitor'}.")
+    conf = read_config
+    # allow a significantly longer timeout on requests that are sending full yaml config. min 30 seconds.
+    timeout = Cronitor.timeout < 30 ? 30 : Cronitor.timeout
+    monitors = Monitor.put(monitors: conf, format: Cronitor::Monitor::Formats::YAML, rollback: rollback,
+                           timeout: timeout)
+    count = 0
+    # step through the different monitor types and count up all the returned configurations
+    Cronitor::YAML_KEYS.each do |k|
+      count += (monitors[k]&.count || 0)
+    end
+    puts("#{count} monitors #{rollback ? 'validated' : 'synced to Cronitor'}.")
   rescue ValidationError => e
-    Cronitor.logger.error(e)
+    Cronitor.logger&.error(e)
   end
 
   def self.validate_config

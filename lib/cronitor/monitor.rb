@@ -6,56 +6,89 @@ module Cronitor
 
     PING_RETRY_THRESHOLD = 5
 
+    module Formats
+      ALL = [
+        JSON = 'json',
+        YAML = 'yaml'
+      ].freeze
+    end
+
+    module Headers
+      JSON = {
+        'Content-Type': 'application/json',
+        'User-Agent': "cronitor-ruby-#{Cronitor::VERSION}",
+        'Cronitor-Version': Cronitor.api_version
+      }.freeze
+      YAML = JSON.merge({
+                          'Content-Type': 'application/yaml'
+                        })
+    end
+
     def self.put(opts = {})
       rollback = opts[:rollback] || false
       opts.delete(:rollback)
 
       monitors = opts[:monitors] || [opts]
 
+      if opts[:format] == Cronitor::Monitor::Formats::YAML
+        url = "#{Cronitor.monitor_api_url}.yaml"
+        monitors['rollback'] = true if rollback
+        body = YAML.dump(monitors)
+        headers = Cronitor::Monitor::Headers::YAML
+      else
+        url = Cronitor.monitor_api_url
+        body = {
+          monitors: monitors,
+          rollback: rollback
+        }.to_json
+        headers = Cronitor::Monitor::Headers::JSON
+      end
+
       resp = HTTParty.put(
-        Cronitor.monitor_api_url,
+        url,
         basic_auth: {
           username: Cronitor.api_key,
           password: ''
         },
-        body: {
-          monitors: monitors,
-          rollback: rollback
-        }.to_json,
-        headers: Cronitor._headers,
-        timeout: opts[:timeout] || 10
+        body: body,
+        headers: headers,
+        timeout: opts[:timeout] || Cronitor.timeout
       )
 
       case resp.code
       when 200
-        out = []
-        data = JSON.parse(resp.body)
+        if opts[:format] == Cronitor::Monitor::Formats::YAML
+          YAML.safe_load(resp.body)
+        else
+          out = []
+          data = JSON.parse(resp.body)
 
-        (data['monitors'] || []).each do |md|
-          m = Monitor.new(md['key'])
-          m.data = Cronitor.symbolize_keys(md)
-          out << m
+          (data['monitors'] || []).each do |md|
+            m = Monitor.new(md['key'])
+            m.data = Cronitor.symbolize_keys(md)
+            out << m
+          end
+          out.length == 1 ? out[0] : out
         end
-        out.length == 1 ? out[0] : out
       when 400
         raise ValidationError.new(resp.body)
       else
-        raise Error.new("Error connecting to Cronitor: #{resp.code}")
+        raise Error.new("Error connecting to Cronitor: #{resp.code}\n #{resp.body}")
       end
     end
 
     def self.delete(key)
       resp = HTTParty.delete(
         "#{Cronitor.monitor_api_url}/#{key}",
-        timeout: 10,
+        timeout: Cronitor.timeout,
         basic_auth: {
           username: Cronitor.api_key,
           password: ''
         },
-        headers: Cronitor._headers
+        headers: Cronitor::Monitor::Headers::JSON
       )
       if resp.code != 204
-        Cronitor.logger.error("Error deleting monitor: #{key}")
+        Cronitor.logger&.error("Error deleting monitor: #{key}")
         return false
       end
       true
@@ -81,7 +114,7 @@ module Cronitor
     def ping(params = {})
       retry_count = params[:retry_count] || 0
       if api_key.nil?
-        Cronitor.logger.error('No API key detected. Set Cronitor.api_key or initialize Monitor with an api_key:')
+        Cronitor.logger&.error('No API key detected. Set Cronitor.api_key or initialize Monitor with an api_key:')
         return false
       end
 
@@ -92,8 +125,8 @@ module Cronitor
         response = HTTParty.get(
           ping_url,
           query: clean_params(params),
-          timeout: 5,
-          headers: Cronitor._headers,
+          timeout: Cronitor.ping_timeout,
+          headers: Cronitor::Monitor::Headers::JSON,
           query_string_normalizer: lambda do |query|
             query.compact!
             metrics = query[:metric]
@@ -106,13 +139,13 @@ module Cronitor
         )
 
         if response.code != 200
-          Cronitor.logger.error("Cronitor Telemetry Error: #{response.code}")
+          Cronitor.logger&.error("Cronitor Telemetry Error: #{response.code}")
           return false
         end
         true
       rescue StandardError => e
         # rescue instances of StandardError i.e. Timeout::Error, SocketError, etc
-        Cronitor.logger.error("Cronitor Telemetry Error: #{e}")
+        Cronitor.logger&.error("Cronitor Telemetry Error: #{e}")
         return false if retry_count >= Monitor::PING_RETRY_THRESHOLD
 
         # apply a backoff before sending the next ping
@@ -131,8 +164,8 @@ module Cronitor
 
       resp = HTTParty.get(
         pause_url,
-        timeout: 5,
-        headers: Cronitor._headers,
+        timeout: Cronitor.timeout,
+        headers: Cronitor::Monitor::Headers::JSON,
         basic_auth: {
           username: api_key,
           password: ''
@@ -162,13 +195,13 @@ module Cronitor
 
     def fetch
       unless api_key
-        Cronitor.logger.error(
+        Cronitor.logger&.error(
           'No API key detected. Set Cronitor.api_key or initialize Monitor with the api_key kwarg'
         )
         return
       end
 
-      HTTParty.get(monitor_api_url, timeout: 10, headers: Cronitor._headers, format: :json)
+      HTTParty.get(monitor_api_url, timeout: Cronitor.timeout, headers: Cronitor::Monitor::Headers::JSON, format: :json)
     end
 
     def clean_params(params)
