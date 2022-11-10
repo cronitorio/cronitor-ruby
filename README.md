@@ -132,7 +132,7 @@ You can also create and update monitors by calling `Monitor.put`.
 ```ruby
 require 'cronitor'
 
-monitors = Cronitor::Monitor.put([
+monitors = [
   {
     type: 'job',
     key: 'send-customer-invoices',
@@ -154,7 +154,9 @@ monitors = Cronitor::Monitor.put([
         'response.time < 600ms',
     ]
   }
-])
+]
+
+monitors.each { |m| Cronitor::Monitor.put(monitor) }
 ```
 
 ### Pause, Reset, Delete
