@@ -29,8 +29,8 @@ The `Cronitor#job` helper will send telemetry events before calling your block a
 require 'cronitor'
 Cronitor.api_key = 'api_key_123'
 
-Cronitor.job 'warehouse-replenishmenth-report' do
-  ReplenishmentReport.new(Date.today).run()
+Cronitor.job 'important-job' do
+    ImportantJob.new(Date.today).run()
 end
 ```
 
