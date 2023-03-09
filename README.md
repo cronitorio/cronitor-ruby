@@ -148,7 +148,7 @@ monitors = [
     request: {
         url: 'https://cronitor.io'
     },
-    schedule: 'every 45 seconds',
+    schedule: 'every 60 seconds',
     assertions: [
         'response.code = 200',
         'response.time < 600ms',
@@ -156,7 +156,7 @@ monitors = [
   }
 ]
 
-monitors.each { |m| Cronitor::Monitor.put(monitor) }
+Cronitor::Monitor.put(monitors)
 ```
 
 ### Pause, Reset, Delete
