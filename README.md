@@ -40,7 +40,7 @@ Cronitor provides a [separate library](https://github.com/cronitorio/cronitor-si
 
 ## Sending Telemetry Events
 
-If you want finer control over when/how [telemetry pings](https://cronitor.io/docs/telemetry-api) are sent,
+If you want more control over when/how [telemetry pings](https://cronitor.io/docs/telemetry-api) are sent,
 you can instantiate a monitor and call `#ping`.
 
 ```ruby
