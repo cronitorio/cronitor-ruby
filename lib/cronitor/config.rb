@@ -9,7 +9,7 @@ module Cronitor
   YAML_KEYS = MONITOR_TYPES.map { |t| "#{t}s" }
 
   class << self
-    attr_accessor :api_key, :api_version, :environment, :logger, :config, :timeout, :ping_timeout
+    attr_accessor :api_key, :api_version, :environment, :logger, :config, :timeout, :ping_timeout, :auto_discover_sidekiq
 
     def configure(&block)
       block.call(self)
@@ -22,6 +22,7 @@ module Cronitor
   self.timeout = ENV.fetch('CRONITOR_TIMEOUT', nil) || 10
   self.ping_timeout = ENV.fetch('CRONITOR_PING_TIMEOUT', nil) || 5
   self.config = ENV.fetch('CRONITOR_CONFIG', nil)
+  self.auto_discover_sidekiq = ENV.fetch('CRONITOR_AUTO_DISCOVER_SIDEKIQ', true) # https://github.com/cronitorio/cronitor-sidekiq
   self.logger = Logger.new($stdout)
   logger.level = Logger::INFO
 end
