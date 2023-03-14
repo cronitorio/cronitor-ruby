@@ -1,6 +1,6 @@
 # Cronitor Ruby Library
 
-![Test](https://github.com/cronitorio/cronitor-ruby/workflows/Test/badge.svg)
+![Tests](https://github.com/cronitorio/cronitor-ruby/workflows/Test/badge.svg)
 [![Gem Version](https://badge.fury.io/rb/cronitor.svg)](https://badge.fury.io/rb/cronitor)
 
 
