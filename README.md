@@ -62,6 +62,8 @@ monitor.ping(state: 'complete', metrics: {count: 1000, error_count: 17})
 
 ## Configuring Monitors
 
+### Using a YAML configuration file
+
 You can configure all of your monitors using a single YAML file. This can be version controlled and synced to Cronitor as part of
 a deployment or build process. For details on all of the attributes that can be set, see the [Monitor API](https://cronitor.io/docs/monitor-api) documentation.
 
@@ -127,37 +129,61 @@ heartbeats:
 
 ```
 
-You can also create and update monitors by calling `Monitor.put`.
+### Using `Cronitor::Monitor.put`
 
+You can also create and update monitors by calling `Cronitor::Monitor.put`. This method can handle multiple monitors at once and supports various configurations and options.
+
+
+#### Usage
 ```ruby
 require 'cronitor'
 
+# Define monitors as an array of hashes
 monitors = [
   {
     type: 'job',
     key: 'send-customer-invoices',
     schedule: '0 0 * * *',
-    assertions: [
-        'metric.duration < 5 min'
-    ],
+    assertions: ['metric.duration < 5 min'],
     notify: ['devops-alerts-slack']
   },
   {
     type: 'check',
     key: 'Cronitor Homepage',
-    request: {
-        url: 'https://cronitor.io'
-    },
+    request: { url: 'https://cronitor.io' },
     schedule: 'every 60 seconds',
-    assertions: [
-        'response.code = 200',
-        'response.time < 600ms',
-    ]
+    assertions: ['response.code = 200', 'response.time < 600ms']
   }
 ]
 
-Cronitor::Monitor.put(monitors)
+# Options hash with monitors array
+options = {
+  monitors: monitors,
+  format: 'json', # Optional, can be 'json' or 'yaml'
+  rollback: false, # Optional, default is false
+  timeout: 10 # Optional, specify request timeout in seconds
+}
+
+# Create or update monitors
+Cronitor::Monitor.put(options)
 ```
+
+#### Parameters
+- `monitors`: An array of monitor configuration hashes.
+- `options`: A hash containing:
+  - `:monitors`: An array of monitor hashes (required).
+  - `:format`: String, format of the request ('json' or 'yaml'). Default is 'json'.
+  - `:rollback`: Boolean, indicates whether to rollback on failure. Default is `false`.
+  - `:timeout`: Integer, request timeout in seconds. Falls back to `Cronitor.timeout` if not specified.
+
+#### Return Value
+Depending on the `:format` option, this method returns:
+- For JSON: An array of `Cronitor::Monitor` instances or a single instance if only one monitor is provided.
+- For YAML: The parsed response body.
+
+#### Error Handling
+- `ValidationError`: Raised when the API returns a 400 status code, indicating invalid monitor configurations.
+- `Error`: Raised for other non-successful responses, indicating issues with connecting to the Cronitor API.
 
 ### Pause, Reset, Delete
 
