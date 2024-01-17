@@ -152,7 +152,10 @@ monitors = [
     key: 'Cronitor Homepage',
     request: { url: 'https://cronitor.io' },
     schedule: 'every 60 seconds',
-    assertions: ['response.code = 200', 'response.time < 600ms']
+    assertions: [
+      'response.code = 200',
+      'response.time < 600ms'
+    ]
   }
 ]
 
