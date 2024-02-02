@@ -64,7 +64,7 @@ module Cronitor
   end
 
   def self.monitor_api_url
-    'https://cronitor.io/api/monitors'
+    "#{Cronitor.monitor_endpoint}/api/monitors"
   end
 end
 

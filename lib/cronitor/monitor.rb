@@ -180,7 +180,7 @@ module Cronitor
     end
 
     def ping_api_url
-      "https://cronitor.link/p/#{api_key}/#{key}"
+      "#{Cronitor.ping_endpoint}/p/#{api_key}/#{key}"
     end
 
     def fallback_ping_api_url
