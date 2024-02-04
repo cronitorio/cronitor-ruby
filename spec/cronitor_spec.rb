@@ -22,16 +22,20 @@ MONITOR_2[:key] = 'another-test-key'
 RSpec.describe Cronitor do
 
   describe '#configure' do
-    it 'sets the api_key, api_version, and env' do
+    it 'sets the api_key, api_version, env, ping_url and monitor_url' do
       Cronitor.configure do |cronitor|
         cronitor.api_key = 'foo'
         cronitor.api_version = 'bar'
         cronitor.environment = 'baz'
+        cronitor.ping_url = 'https://foo.com'
+        cronitor.monitor_url = 'https://bar.com'
       end
 
       expect(Cronitor.api_key).to eq('foo')
       expect(Cronitor.api_version).to eq('bar')
       expect(Cronitor.environment).to eq('baz')
+      expect(Cronitor.ping_url).to eq('https://foo.com')
+      expect(Cronitor.monitor_url).to eq('https://bar.com')
     end
   end
 
