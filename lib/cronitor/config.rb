@@ -23,8 +23,8 @@ module Cronitor
   self.ping_timeout = ENV.fetch('CRONITOR_PING_TIMEOUT', nil) || 5
   self.config = ENV.fetch('CRONITOR_CONFIG', nil)
   self.auto_discover_sidekiq = ENV.fetch('CRONITOR_AUTO_DISCOVER_SIDEKIQ', 'true').casecmp('true').zero? # https://github.com/cronitorio/cronitor-sidekiq
-  self.ping_url = ENV.fetch('CRONITOR_ping_url', 'https://cronitor.link')
-  self.monitor_url = ENV.fetch('CRONITOR_monitor_url', 'https://cronitor.io')
+  self.ping_url = ENV.fetch('CRONITOR_PING_URL', 'https://cronitor.link')
+  self.monitor_url = ENV.fetch('CRONITOR_MONITOR_URL', 'https://cronitor.io')
   self.logger = Logger.new($stdout)
   logger.level = Logger::INFO
 end
