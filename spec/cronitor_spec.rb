@@ -37,6 +37,31 @@ RSpec.describe Cronitor do
       expect(Cronitor.ping_url).to eq('https://foo.com')
       expect(Cronitor.monitor_url).to eq('https://bar.com')
     end
+
+    context 'when no CRONITOR_PING_URL or CRONITOR_MONITOR_URL ENV variables are set' do
+      it 'returns the default Cronitor URLs' do
+        expect(Cronitor.ping_url).to eq('https://cronitor.link')
+        expect(Cronitor.monitor_url).to eq('ttps://cronitor.io')
+      end
+    end
+
+    context 'when custom CRONITOR_PING_URL and CRONITOR_MONITOR_URL ENV variables are set' do
+      let(:env_vars) do
+        ENV.to_hash.merge(
+          'CRONITOR_PING_URL' => 'https://ping.com',
+          'CRONITOR_MONITOR_URL' => 'https://monitor.com'
+        )
+      end
+
+      before do
+        stub_const('ENV', env_vars)
+      end
+
+      it 'returns the custom Cronitor URLs' do
+        expect(Cronitor.ping_url).to eq('https://ping.com')
+        expect(Cronitor.monitor_url).to eq('https://monitor.com')
+      end
+    end
   end
 
   describe 'YAML configuration' do
