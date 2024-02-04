@@ -22,26 +22,28 @@ MONITOR_2[:key] = 'another-test-key'
 RSpec.describe Cronitor do
 
   describe '#configure' do
-    it 'sets the api_key, api_version, env, ping_url and monitor_url' do
+    it 'sets the api_key, api_version, and env' do
       Cronitor.configure do |cronitor|
         cronitor.api_key = 'foo'
         cronitor.api_version = 'bar'
         cronitor.environment = 'baz'
-        cronitor.ping_url = 'https://foo.com'
-        cronitor.monitor_url = 'https://bar.com'
       end
 
       expect(Cronitor.api_key).to eq('foo')
       expect(Cronitor.api_version).to eq('bar')
       expect(Cronitor.environment).to eq('baz')
-      expect(Cronitor.ping_url).to eq('https://foo.com')
-      expect(Cronitor.monitor_url).to eq('https://bar.com')
     end
+  end
 
-    context 'when no CRONITOR_PING_URL or CRONITOR_MONITOR_URL ENV variables are set' do
-      it 'returns the default Cronitor URLs' do
-        expect(Cronitor.ping_url).to eq('https://cronitor.link')
-        expect(Cronitor.monitor_url).to eq('ttps://cronitor.io')
+  describe '#ping_url and #monitor_url' do
+    let(:env_vars) { ENV }
+
+    before do
+      stub_const('ENV', env_vars)
+      # We need to reset the ping_url and monitor_url since the previous spec sets them globally
+      Cronitor.configure do |cronitor|
+        cronitor.ping_url = cronitor.default_ping_url
+        cronitor.monitor_url = cronitor.default_monitor_url
       end
     end
 
@@ -53,13 +55,16 @@ RSpec.describe Cronitor do
         )
       end
 
-      before do
-        stub_const('ENV', env_vars)
-      end
-
       it 'returns the custom Cronitor URLs' do
         expect(Cronitor.ping_url).to eq('https://ping.com')
         expect(Cronitor.monitor_url).to eq('https://monitor.com')
+      end
+    end
+
+    context 'when no CRONITOR_PING_URL or CRONITOR_MONITOR_URL ENV variables are set' do
+      it 'returns the default Cronitor URLs' do
+        expect(Cronitor.ping_url).to eq('https://cronitor.link')
+        expect(Cronitor.monitor_url).to eq('https://cronitor.io')
       end
     end
   end
