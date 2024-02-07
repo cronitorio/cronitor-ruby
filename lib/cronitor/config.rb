@@ -20,7 +20,7 @@ module Cronitor
     end
 
     def default_monitor_url
-      ENV.fetch('CRONITOR_PING_URL', 'https://cronitor.link')
+      ENV.fetch('CRONITOR_MONITOR_URL', 'https://cronitor.io')
     end
   end
 
