@@ -27,11 +27,13 @@ RSpec.describe Cronitor do
         cronitor.api_key = 'foo'
         cronitor.api_version = 'bar'
         cronitor.environment = 'baz'
+        cronitor.telemetry_domain = 'https://ping.com'
       end
 
       expect(Cronitor.api_key).to eq('foo')
       expect(Cronitor.api_version).to eq('bar')
       expect(Cronitor.environment).to eq('baz')
+      expect(Cronitor.telemetry_domain).to eq('https://ping.com')
     end
   end
 
@@ -187,6 +189,21 @@ RSpec.describe Cronitor do
       it "logs an error to STDOUT" do
         Cronitor.api_key = nil
         expect(Cronitor.logger).to receive(:error)
+        monitor.ping()
+      end
+    end
+
+    context "when a custom ping domain is set" do
+      it "uses the custom domain in the ping request" do
+        Cronitor.telemetry_domain = 'ping.com'
+        Cronitor.api_key = FAKE_API_KEY
+        expect(HTTParty).to receive(:get).with(
+          "https://ping.com/p/#{FAKE_API_KEY}/test-key",
+          hash_including({
+            headers: Cronitor::Monitor::Headers::JSON,
+            timeout: 5,
+          })
+        ).and_return(instance_double(HTTParty::Response, code: 200))
         monitor.ping()
       end
     end
