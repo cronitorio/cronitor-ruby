@@ -120,8 +120,7 @@ module Cronitor
 
       begin
         ping_url = ping_api_url
-        ping_url = fallback_ping_api_url if retry_count > PING_RETRY_THRESHOLD
-      
+        ping_url = fallback_ping_api_url if retry_count > Monitor::PING_RETRY_THRESHOLD
         response = HTTParty.get(
           ping_url,
           query: clean_params(params),
