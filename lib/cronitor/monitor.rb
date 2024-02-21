@@ -4,7 +4,7 @@ module Cronitor
   class Monitor
     attr_reader :key, :api_key, :api_version, :env
 
-    PING_RETRY_THRESHOLD = 5
+    PING_RETRY_THRESHOLD = 3
 
     module Formats
       ALL = [
@@ -24,19 +24,19 @@ module Cronitor
                         })
     end
 
+
     def self.put(opts = {})
       rollback = opts[:rollback] || false
       opts.delete(:rollback)
 
       monitors = opts[:monitors] || [opts]
-
+      url = "https://cronitor.io/api/monitors"
       if opts[:format] == Cronitor::Monitor::Formats::YAML
-        url = "#{Cronitor.monitor_api_url}.yaml"
+        url = "#{url}.yaml"
         monitors['rollback'] = true if rollback
         body = YAML.dump(monitors)
         headers = Cronitor::Monitor::Headers::YAML
       else
-        url = Cronitor.monitor_api_url
         body = {
           monitors: monitors,
           rollback: rollback
@@ -120,8 +120,8 @@ module Cronitor
 
       begin
         ping_url = ping_api_url
-        ping_url = fallback_ping_api_url if retry_count > (PING_RETRY_THRESHOLD / 2)
-
+        ping_url = fallback_ping_api_url if retry_count > PING_RETRY_THRESHOLD
+      
         response = HTTParty.get(
           ping_url,
           query: clean_params(params),
@@ -159,7 +159,7 @@ module Cronitor
     end
 
     def pause(hours = nil)
-      pause_url = "#{monitor_api_url}/pause"
+      pause_url = "#{monitor_api_url}/#{key}/pause"
       pause_url += "/#{hours}" unless hours.nil?
 
       resp = HTTParty.get(
@@ -180,7 +180,7 @@ module Cronitor
     end
 
     def ping_api_url
-      "#{Cronitor.ping_url}/p/#{api_key}/#{key}"
+      "https://#{Cronitor.telemetry_domain}/p/#{api_key}/#{key}"
     end
 
     def fallback_ping_api_url
@@ -188,8 +188,9 @@ module Cronitor
     end
 
     def monitor_api_url
-      "#{Cronitor.monitor_api_url}/#{key}"
+      "https://cronitor.io/api/monitors"
     end
+
 
     private
 

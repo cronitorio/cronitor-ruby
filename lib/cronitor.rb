@@ -63,9 +63,6 @@ module Cronitor
     end
   end
 
-  def self.monitor_api_url
-    "#{Cronitor.monitor_url}/api/monitors"
-  end
 end
 
 Cronitor.read_config(Cronitor.config) unless Cronitor.config.nil?

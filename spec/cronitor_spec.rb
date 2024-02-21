@@ -27,45 +27,13 @@ RSpec.describe Cronitor do
         cronitor.api_key = 'foo'
         cronitor.api_version = 'bar'
         cronitor.environment = 'baz'
+        cronitor.telemetry_domain = 'https://ping.com'
       end
 
       expect(Cronitor.api_key).to eq('foo')
       expect(Cronitor.api_version).to eq('bar')
       expect(Cronitor.environment).to eq('baz')
-    end
-  end
-
-  describe '#ping_url and #monitor_url' do
-    let(:env_vars) { ENV }
-
-    before do
-      stub_const('ENV', env_vars)
-      # We need to reset the ping_url and monitor_url since the previous spec sets them globally
-      Cronitor.configure do |cronitor|
-        cronitor.ping_url = cronitor.default_ping_url
-        cronitor.monitor_url = cronitor.default_monitor_url
-      end
-    end
-
-    context 'when custom CRONITOR_PING_URL and CRONITOR_MONITOR_URL ENV variables are set' do
-      let(:env_vars) do
-        ENV.to_hash.merge(
-          'CRONITOR_PING_URL' => 'https://ping.com',
-          'CRONITOR_MONITOR_URL' => 'https://monitor.com'
-        )
-      end
-
-      it 'returns the custom Cronitor URLs' do
-        expect(Cronitor.ping_url).to eq('https://ping.com')
-        expect(Cronitor.monitor_url).to eq('https://monitor.com')
-      end
-    end
-
-    context 'when no CRONITOR_PING_URL or CRONITOR_MONITOR_URL ENV variables are set' do
-      it 'returns the default Cronitor URLs' do
-        expect(Cronitor.ping_url).to eq('https://cronitor.link')
-        expect(Cronitor.monitor_url).to eq('https://cronitor.io')
-      end
+      expect(Cronitor.telemetry_domain).to eq('https://ping.com')
     end
   end
 
@@ -221,6 +189,21 @@ RSpec.describe Cronitor do
       it "logs an error to STDOUT" do
         Cronitor.api_key = nil
         expect(Cronitor.logger).to receive(:error)
+        monitor.ping()
+      end
+    end
+
+    context "when a custom ping domain is set" do
+      it "uses the custom domain in the ping request" do
+        Cronitor.telemetry_domain = 'ping.com'
+        Cronitor.api_key = FAKE_API_KEY
+        expect(HTTParty).to receive(:get).with(
+          "https://ping.com/p/#{FAKE_API_KEY}/test-key",
+          hash_including({
+            headers: Cronitor::Monitor::Headers::JSON,
+            timeout: 5,
+          })
+        ).and_return(instance_double(HTTParty::Response, code: 200))
         monitor.ping()
       end
     end
