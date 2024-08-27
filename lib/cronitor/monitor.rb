@@ -201,7 +201,16 @@ module Cronitor
         return
       end
 
-      HTTParty.get(monitor_api_url, timeout: Cronitor.timeout, headers: Cronitor::Monitor::Headers::JSON, format: :json)
+      HTTParty.get(
+        monitor_api_url,
+        basic_auth: {
+          username: api_key,
+          password: ''
+        },
+        timeout: Cronitor.timeout,
+        headers: Cronitor::Monitor::Headers::JSON,
+        format: :json
+      )
     end
 
     def clean_params(params)
