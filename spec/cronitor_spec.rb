@@ -242,6 +242,25 @@ RSpec.describe Cronitor do
         end
       end
     end
+
+    context '#data' do
+      it 'should fetch the monitor with cronitor api key' do
+        expect(HTTParty).to receive(:get).with("https://cronitor.io/api/monitors", hash_including(basic_auth: {username: Cronitor.api_key, password: ''})).and_return(
+          instance_double(HTTParty::Response, code: 200, body: MONITOR.to_json)
+        )
+        Cronitor::Monitor.new('test-job').data
+      end
+
+      context 'when monitor api key is provided' do
+        it 'should fetch the monitor with monitor api key' do
+          api_key = 'monitor_api_key'
+          expect(HTTParty).to receive(:get).with("https://cronitor.io/api/monitors", hash_including(basic_auth: {username: api_key, password: ''})).and_return(
+            instance_double(HTTParty::Response, code: 200, body: MONITOR.to_json)
+          )
+          Cronitor::Monitor.new('test-job', api_key: api_key).data
+        end
+      end
+    end
   end
 
   describe 'functional tests - ', type: 'functional' do
