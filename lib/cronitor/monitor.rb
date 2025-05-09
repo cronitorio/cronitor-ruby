@@ -5,6 +5,7 @@ module Cronitor
     attr_reader :key, :api_key, :api_version, :env
 
     PING_RETRY_THRESHOLD = 3
+    API_URL = 'https://cronitor.io/api/monitors'.freeze
 
     module Formats
       ALL = [
@@ -30,7 +31,7 @@ module Cronitor
       opts.delete(:rollback)
 
       monitors = opts[:monitors] || [opts]
-      url = "https://cronitor.io/api/monitors"
+      url = Cronitor::Monitor::API_URL
       if opts[:format] == Cronitor::Monitor::Formats::YAML
         url = "#{url}.yaml"
         monitors['rollback'] = true if rollback
@@ -79,7 +80,7 @@ module Cronitor
 
     def self.delete(key)
       resp = HTTParty.delete(
-        "#{Cronitor.monitor_api_url}/#{key}",
+        "#{Cronitor::Monitor::API_URL}/#{key}",
         timeout: Cronitor.timeout,
         basic_auth: {
           username: Cronitor.api_key,
@@ -158,7 +159,7 @@ module Cronitor
     end
 
     def pause(hours = nil)
-      pause_url = "#{monitor_api_url}/#{key}/pause"
+      pause_url = "#{Cronitor::Monitor::API_URL}/#{key}/pause"
       pause_url += "/#{hours}" unless hours.nil?
 
       resp = HTTParty.get(
@@ -186,11 +187,6 @@ module Cronitor
       "https://cronitor.io/p/#{api_key}/#{key}"
     end
 
-    def monitor_api_url
-      "https://cronitor.io/api/monitors"
-    end
-
-
     private
 
     def fetch
@@ -202,7 +198,7 @@ module Cronitor
       end
 
       HTTParty.get(
-        monitor_api_url,
+        Cronitor::Monitor::API_URL,
         basic_auth: {
           username: api_key,
           password: ''
