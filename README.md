@@ -198,7 +198,7 @@ monitor = Cronitor::Monitor.new('heartbeat-monitor')
 monitor.pause(24) # pause alerting for 24 hours
 monitor.unpause # alias for .pause(0)
 monitor.ok # manually reset to a passing state alias for monitor.ping({state: ok})
-monitor.delete # destroy the monitor
+Cronitor::Monitor.delete('heartbeat-monitor') # destroy the monitor
 ```
 
 ## Package Configuration
