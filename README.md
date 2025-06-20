@@ -62,7 +62,7 @@ monitor.ping(state: 'complete', metrics: {count: 1000, error_count: 17})
 
 ## Configuring Monitors
 
-### Using a YAML configuration file
+### YAML Configuration File
 
 You can configure all of your monitors using a single YAML file. This can be version controlled and synced to Cronitor as part of
 a deployment or build process. For details on all of the attributes that can be set, see the [Monitor API](https://cronitor.io/docs/monitor-api) documentation.
@@ -128,6 +128,8 @@ heartbeats:
             events: true # send alert when the event occurs
 
 ```
+#### Async Uploads
+If you are working with large YAML files (300+ monitors), you may hit timeouts when trying to sync monitors in a single http request. This workload to be processed asynchronously by adding the key `async: true` to the config file. The request will immediately return a `batch_key`. If a `webhook_url` parameter is included, Cronitor will POST to that URL with the results of the background processing and will include the `batch_key` matching the one returned in the initial response.
 
 ### Using `Cronitor::Monitor.put`
 
