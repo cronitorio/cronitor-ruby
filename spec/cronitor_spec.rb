@@ -102,6 +102,57 @@ RSpec.describe Cronitor do
         Cronitor.validate_config()
       end
     end
+
+    context '#generate_config' do
+      let(:yaml_content) { "jobs:\n  test-job:\n    schedule: '* * * * *'\n" }
+      let(:temp_config_path) { './spec/temp_cronitor.yaml' }
+      let(:default_config_path) { './cronitor.yaml' }
+
+      after(:each) do
+        File.delete(temp_config_path) if File.exist?(temp_config_path)
+        File.delete(default_config_path) if File.exist?(default_config_path)
+        Cronitor.config = nil # Reset config to avoid test interference
+      end
+
+      context 'when no config path is set' do
+        it 'uses default path ./cronitor.yaml' do
+          Cronitor.config = nil
+          expect(Cronitor::Monitor).to receive(:as_yaml).and_return(yaml_content)
+          expect(File).to receive(:open).with('./cronitor.yaml', 'w').and_call_original
+
+          # Mock the file write to avoid creating actual file
+          allow(File).to receive(:open).with('./cronitor.yaml', 'w').and_yield(StringIO.new)
+
+          result = Cronitor.generate_config
+          expect(result).to be_nil
+        end
+      end
+
+      context 'when config path is provided' do
+        it 'uses the provided path' do
+          expect(Cronitor::Monitor).to receive(:as_yaml).and_return(yaml_content)
+
+          result = Cronitor.generate_config(temp_config_path)
+
+          expect(result).to be_nil
+          expect(File.exist?(temp_config_path)).to be(true)
+          expect(File.read(temp_config_path)).to eq(yaml_content)
+        end
+      end
+
+      context 'when Cronitor.config is set' do
+        it 'uses Cronitor.config path' do
+          Cronitor.config = temp_config_path
+          expect(Cronitor::Monitor).to receive(:as_yaml).and_return(yaml_content)
+
+          result = Cronitor.generate_config
+
+          expect(result).to be_nil
+          expect(File.exist?(temp_config_path)).to be(true)
+          expect(File.read(temp_config_path)).to eq(yaml_content)
+        end
+      end
+    end
   end
 
   describe '#job' do
@@ -239,6 +290,69 @@ RSpec.describe Cronitor do
 
       context 'api validation fails' do
         it 'should return a Cronitor:Error on API validation error ' do
+        end
+      end
+    end
+
+    context '#as_yaml' do
+      let(:yaml_response) { "jobs:\n  test-job:\n    schedule: '* * * * *'\n" }
+
+      it 'should fetch YAML configuration from API' do
+        expect(HTTParty).to receive(:get).with(
+          'https://cronitor.io/api/monitors.yaml',
+          hash_including(
+            basic_auth: { username: FAKE_API_KEY, password: '' },
+            headers: hash_including('Content-Type': 'application/yaml'),
+            timeout: 10
+          )
+        ).and_return(instance_double(HTTParty::Response, code: 200, body: yaml_response))
+
+        result = Cronitor::Monitor.as_yaml
+        expect(result).to eq(yaml_response)
+      end
+
+      it 'should use custom API key when provided' do
+        custom_api_key = 'custom_key'
+        expect(HTTParty).to receive(:get).with(
+          'https://cronitor.io/api/monitors.yaml',
+          hash_including(
+            basic_auth: { username: custom_api_key, password: '' }
+          )
+        ).and_return(instance_double(HTTParty::Response, code: 200, body: yaml_response))
+
+        Cronitor::Monitor.as_yaml(api_key: custom_api_key)
+      end
+
+      it 'should use custom API version when provided' do
+        api_version = '2023-01-01'
+        expect(HTTParty).to receive(:get).with(
+          'https://cronitor.io/api/monitors.yaml',
+          hash_including(
+            headers: hash_including(:'Cronitor-Version' => api_version)
+          )
+        ).and_return(instance_double(HTTParty::Response, code: 200, body: yaml_response))
+
+        Cronitor::Monitor.as_yaml(api_version: api_version)
+      end
+
+      context 'when no API key is available' do
+        it 'raises an error' do
+          original_api_key = Cronitor.api_key
+          Cronitor.api_key = nil
+
+          expect { Cronitor::Monitor.as_yaml }.to raise_error(Cronitor::Error, /No API key detected/)
+
+          Cronitor.api_key = original_api_key
+        end
+      end
+
+      context 'when API returns an error' do
+        it 'raises an error with the response details' do
+          expect(HTTParty).to receive(:get).and_return(
+            instance_double(HTTParty::Response, code: 400, body: 'Bad Request')
+          )
+
+          expect { Cronitor::Monitor.as_yaml }.to raise_error(Cronitor::Error, /Unexpected error 400: Bad Request/)
         end
       end
     end

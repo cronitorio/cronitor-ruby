@@ -49,6 +49,17 @@ module Cronitor
     apply_config(rollback: true)
   end
 
+  def self.generate_config(path = nil)
+    config_path = path || Cronitor.config || './cronitor.yaml'
+    yaml_content = Monitor.as_yaml
+
+    File.open(config_path, 'w') do |file|
+      file.write(yaml_content)
+    end
+
+    puts("Configuration saved to #{config_path}")
+  end
+
   def self.job(key, &block)
     monitor = Monitor.new(key)
     series = Time.now.to_f

@@ -77,6 +77,35 @@ module Cronitor
       end
     end
 
+    def self.as_yaml(api_key: nil, api_version: nil)
+      timeout = Cronitor.timeout || 10
+      api_key = api_key || Cronitor.api_key
+
+      unless api_key
+        raise Error.new('No API key detected. Set Cronitor.api_key or pass api_key parameter')
+      end
+
+      headers = Cronitor::Monitor::Headers::YAML.dup
+      headers[:'Cronitor-Version'] = api_version if api_version
+
+      resp = HTTParty.get(
+        "#{MONITOR_API_URL}.yaml",
+        basic_auth: {
+          username: api_key,
+          password: ''
+        },
+        headers: headers,
+        timeout: timeout
+      )
+
+      case resp.code
+      when 200
+        resp.body
+      else
+        raise Error.new("Unexpected error #{resp.code}: #{resp.body}")
+      end
+    end
+
     def delete
       resp = HTTParty.delete(
         "#{monitor_api_url}/#{key}",
