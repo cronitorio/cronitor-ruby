@@ -1,7 +1,7 @@
 # Cronitor Ruby Library
 
 ![Tests](https://github.com/cronitorio/cronitor-ruby/workflows/Test/badge.svg)
-[![Gem Version](https://badge.fury.io/rb/cronitor.svg)](https://badge.fury.io/rb/cronitor)
+[![Gem Version](https://img.shields.io/gem/v/cronitor?color=green)](https://rubygems.org/gems/cronitor)
 
 
 [Cronitor](https://cronitor.io/) provides dead simple monitoring for cron jobs, daemons, queue workers, websites, APIs, and anything else that can send or receive an HTTP request. The Cronitor Ruby library provides convenient access to the Cronitor API from applications written in Ruby. See our [API docs](https://cronitor.io/docs/api) for detailed references on configuring monitors and sending telemetry pings.
