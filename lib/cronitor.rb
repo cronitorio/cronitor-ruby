@@ -32,7 +32,7 @@ module Cronitor
   def self.apply_config(rollback: false)
     conf = read_config
     # allow a significantly longer timeout on requests that are sending full yaml config. min 30 seconds.
-    timeout = Cronitor.timeout < 30 ? 30 : Cronitor.timeout
+    timeout = [Cronitor.timeout, 30].max
     monitors = Monitor.put(monitors: conf, format: Cronitor::Monitor::Formats::YAML, rollback: rollback,
                            timeout: timeout)
     count = 0
@@ -62,7 +62,6 @@ module Cronitor
       raise e
     end
   end
-
 end
 
 Cronitor.read_config(Cronitor.config) unless Cronitor.config.nil?

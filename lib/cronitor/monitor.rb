@@ -5,6 +5,7 @@ module Cronitor
     attr_reader :key, :api_key, :api_version, :env
 
     PING_RETRY_THRESHOLD = 3
+    MONITOR_API_URL = 'https://cronitor.io/api/monitors'
 
     module Formats
       ALL = [
@@ -24,13 +25,12 @@ module Cronitor
                         })
     end
 
-
     def self.put(opts = {})
       rollback = opts[:rollback] || false
       opts.delete(:rollback)
 
       monitors = opts[:monitors] || [opts]
-      url = "https://cronitor.io/api/monitors"
+      url = MONITOR_API_URL
       if opts[:format] == Cronitor::Monitor::Formats::YAML
         url = "#{url}.yaml"
         monitors['rollback'] = true if rollback
@@ -77,12 +77,12 @@ module Cronitor
       end
     end
 
-    def self.delete(key)
+    def delete
       resp = HTTParty.delete(
-        "#{Cronitor.monitor_api_url}/#{key}",
+        "#{monitor_api_url}/#{key}",
         timeout: Cronitor.timeout,
         basic_auth: {
-          username: Cronitor.api_key,
+          username: api_key,
           password: ''
         },
         headers: Cronitor::Monitor::Headers::JSON
@@ -187,9 +187,8 @@ module Cronitor
     end
 
     def monitor_api_url
-      "https://cronitor.io/api/monitors"
+      MONITOR_API_URL
     end
-
 
     private
 
@@ -219,7 +218,7 @@ module Cronitor
         message: params.fetch(:message, nil),
         series: params.fetch(:series, nil),
         host: params.fetch(:host, Socket.gethostname),
-        metric: params[:metrics] ? params[:metrics].map { |k, v| "#{k}:#{v}" } : nil,
+        metric: params[:metrics]&.map { |k, v| "#{k}:#{v}" },
         stamp: Time.now.to_f,
         env: params.fetch(:env, env)
       }

@@ -294,7 +294,8 @@ RSpec.describe Cronitor do
     end
 
     it 'Deletes a monitor' do
-      expect(Cronitor::Monitor.delete('test-key')).to be(true)
+      monitor = Cronitor::Monitor.new('test-key')
+      expect(monitor.delete).to be(true)
     end
 
   end

@@ -9,12 +9,12 @@ module Cronitor
   YAML_KEYS = MONITOR_TYPES.map { |t| "#{t}s" }
 
   class << self
-    attr_accessor :api_key, :api_version, :environment, :logger, :config, :timeout, :ping_timeout, :auto_discover_sidekiq, :telemetry_domain
+    attr_accessor :api_key, :api_version, :environment, :logger, :config, :timeout, :ping_timeout,
+                  :auto_discover_sidekiq, :telemetry_domain
 
     def configure(&block)
       block.call(self)
     end
-
   end
 
   self.api_key = ENV.fetch('CRONITOR_API_KEY', nil)
