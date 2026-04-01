@@ -11,6 +11,7 @@ require 'cronitor/config'
 require 'cronitor/error'
 require 'cronitor/version'
 require 'cronitor/monitor'
+require 'cronitor/badge'
 
 module Cronitor
   def self.read_config(path = nil)
