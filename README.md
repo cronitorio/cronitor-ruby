@@ -58,6 +58,10 @@ monitor.ping(state: 'run', env: 'staging') # a job/process has started in a stag
 
 # a job/process has completed - include metrics for cronitor to record
 monitor.ping(state: 'complete', metrics: {count: 1000, error_count: 17})
+
+# custom metrics work the same way — any hash key is sent as metric=name:value
+# alongside built-ins (count, error_count, duration)
+monitor.ping(state: 'complete', metrics: {count: 1000, queue_depth: 42, quality_score: 0.98})
 ```
 
 ## Configuring Monitors
