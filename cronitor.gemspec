@@ -23,6 +23,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_runtime_dependency 'httparty'
+  # logger moved from a default gem to a bundled gem in Ruby 4.0.
+  spec.add_runtime_dependency 'logger'
 
   spec.add_development_dependency 'bump', '~> 0.1'
   spec.add_development_dependency 'bundler'
