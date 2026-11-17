@@ -15,14 +15,17 @@ module Cronitor
     end
 
     module Headers
-      JSON = {
-        'Content-Type': 'application/json',
-        'User-Agent': "cronitor-ruby-#{Cronitor::VERSION}",
-        'Cronitor-Version': Cronitor.api_version
-      }.freeze
-      YAML = JSON.merge({
-                          'Content-Type': 'application/yaml'
-                        })
+      def self.json
+        {
+          'Content-Type': 'application/json',
+          'User-Agent': "cronitor-ruby-#{Cronitor::VERSION}",
+          'Cronitor-Version': Cronitor.api_version
+        }
+      end
+
+      def self.yaml
+        json.merge('Content-Type': 'application/yaml')
+      end
     end
 
     def self.put(opts = {})
@@ -35,13 +38,13 @@ module Cronitor
         url = "#{url}.yaml"
         monitors['rollback'] = true if rollback
         body = YAML.dump(monitors)
-        headers = Cronitor::Monitor::Headers::YAML
+        headers = Cronitor::Monitor::Headers.yaml
       else
         body = {
           monitors: monitors,
           rollback: rollback
         }.to_json
-        headers = Cronitor::Monitor::Headers::JSON
+        headers = Cronitor::Monitor::Headers.json
       end
 
       resp = HTTParty.put(
@@ -85,7 +88,7 @@ module Cronitor
         raise Error.new('No API key detected. Set Cronitor.api_key or pass api_key parameter')
       end
 
-      headers = Cronitor::Monitor::Headers::YAML.dup
+      headers = Cronitor::Monitor::Headers.yaml
       headers[:'Cronitor-Version'] = api_version if api_version
 
       resp = HTTParty.get(
@@ -114,7 +117,7 @@ module Cronitor
           username: api_key,
           password: ''
         },
-        headers: Cronitor::Monitor::Headers::JSON
+        headers: Cronitor::Monitor::Headers.json
       )
       if resp.code != 204
         Cronitor.logger&.error("Error deleting monitor: #{key}")
@@ -154,7 +157,7 @@ module Cronitor
           ping_url,
           query: clean_params(params),
           timeout: Cronitor.ping_timeout,
-          headers: Cronitor::Monitor::Headers::JSON,
+          headers: Cronitor::Monitor::Headers.json,
           query_string_normalizer: lambda do |query|
             query.compact!
             metrics = query[:metric]
@@ -193,7 +196,7 @@ module Cronitor
       resp = HTTParty.get(
         pause_url,
         timeout: Cronitor.timeout,
-        headers: Cronitor::Monitor::Headers::JSON,
+        headers: Cronitor::Monitor::Headers.json,
         basic_auth: {
           username: api_key,
           password: ''
@@ -236,7 +239,7 @@ module Cronitor
           password: ''
         },
         timeout: Cronitor.timeout,
-        headers: Cronitor::Monitor::Headers::JSON,
+        headers: Cronitor::Monitor::Headers.json,
         format: :json
       )
     end

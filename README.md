@@ -12,6 +12,7 @@ In this guide:
 - [Monitoring Background Jobs](#monitoring-background-jobs)
 - [Sending Telemetry Events](#sending-telemetry-events)
 - [Configuring Monitors](#configuring-monitors)
+- [Fetching Status Badges](#fetching-status-badges)
 - [Package Configuration & Env Vars](#package-configuration)
 - [Contributing](#contributing)
 
@@ -202,6 +203,42 @@ monitor.unpause # alias for .pause(0)
 monitor.ok # manually reset to a passing state alias for monitor.ping({state: ok})
 monitor.delete # destroy the monitor
 ```
+
+## Fetching Status Badges
+
+[Status badges](https://cronitor.io/docs/status-badges) provide a visual indicator of your monitor's health. Badges are indexed by tag, so to get a badge for a specific monitor, you must first assign it a unique tag.
+
+```ruby
+require 'cronitor'
+Cronitor.api_key = 'api_key_123'
+
+# Fetch all badges
+badges = Cronitor::Badge.all
+
+# Each badge is indexed by its tag
+badges.each do |tag, badge|
+  puts "Tag: #{tag}"
+  puts "SVG URL: #{badge.svg_url}"
+  puts "Badge Key: #{badge.key}"
+end
+
+# Access a specific badge by tag
+if badge = badges['my-monitor-tag']
+  # Extract the badge key for building embed URLs
+  key = badge.key # e.g., 'abc123xyz'
+
+  # Build your own embed URL
+  # Standard: https://cronitor.io/badges/ACCOUNT_ID/production/KEY.svg
+  # Detailed: https://cronitor.io/badges/ACCOUNT_ID/production/KEY/detailed.svg
+end
+```
+
+### Badge Attributes
+
+- `tag` - The tag name used to index this badge
+- `svg_url` - Direct URL to the badge SVG image
+- `url` - Alternative URL for the badge
+- `key` - The unique badge key extracted from the SVG URL (useful for constructing embed URLs)
 
 ## Package Configuration
 

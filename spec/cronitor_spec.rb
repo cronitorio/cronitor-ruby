@@ -37,6 +37,26 @@ RSpec.describe Cronitor do
     end
   end
 
+  describe 'Headers' do
+    it 'includes the current api_version in json headers' do
+      Cronitor.api_version = '2025-11-28'
+      headers = Cronitor::Monitor::Headers.json
+      expect(headers[:'Cronitor-Version']).to eq('2025-11-28')
+    end
+
+    it 'updates when api_version changes after initial configuration' do
+      Cronitor.api_version = 'v1'
+      expect(Cronitor::Monitor::Headers.json[:'Cronitor-Version']).to eq('v1')
+      Cronitor.api_version = 'v2'
+      expect(Cronitor::Monitor::Headers.json[:'Cronitor-Version']).to eq('v2')
+    end
+
+    it 'returns yaml headers with correct content type' do
+      headers = Cronitor::Monitor::Headers.yaml
+      expect(headers[:'Content-Type']).to eq('application/yaml')
+    end
+  end
+
   describe 'YAML configuration' do
     before(:all) do
       Cronitor.configure do |cronitor|
@@ -226,7 +246,7 @@ RSpec.describe Cronitor do
             monitor.send(:ping_api_url),
             hash_including({
               query: hash_including(query),
-              headers: Cronitor::Monitor::Headers::JSON,
+              headers: Cronitor::Monitor::Headers.json,
               timeout: 5,
             })
           ).and_return(instance_double(HTTParty::Response, code: 200))
@@ -251,7 +271,7 @@ RSpec.describe Cronitor do
         expect(HTTParty).to receive(:get).with(
           "https://ping.com/p/#{FAKE_API_KEY}/test-key",
           hash_including({
-            headers: Cronitor::Monitor::Headers::JSON,
+            headers: Cronitor::Monitor::Headers.json,
             timeout: 5,
           })
         ).and_return(instance_double(HTTParty::Response, code: 200))
@@ -373,6 +393,183 @@ RSpec.describe Cronitor do
           )
           Cronitor::Monitor.new('test-job', api_key: api_key).data
         end
+      end
+    end
+  end
+
+  describe 'Badge' do
+    before(:all) do
+      Cronitor.configure do |cronitor|
+        cronitor.api_key = FAKE_API_KEY
+      end
+    end
+
+    let(:sample_badge_response) do
+      {
+        'production' => {
+          'svg' => 'https://cronitor.io/badges/abc123/production/badge-key-1.svg',
+          'url' => 'https://cronitor.io/badges/abc123/production/badge-key-1'
+        },
+        'loyalty-42' => {
+          'svg' => 'https://cronitor.io/badges/abc123/production/loyalty-badge-key.svg',
+          'url' => 'https://cronitor.io/badges/abc123/production/loyalty-badge-key'
+        },
+        'qma-99' => {
+          'svg' => 'https://cronitor.io/badges/abc123/production/qma-badge-key.svg',
+          'url' => 'https://cronitor.io/badges/abc123/production/qma-badge-key'
+        }
+      }
+    end
+
+    context '.all' do
+      it 'fetches all badges from the API' do
+        expect(HTTParty).to receive(:get).with(
+          'https://cronitor.io/api/badges',
+          hash_including(
+            basic_auth: { username: FAKE_API_KEY, password: '' },
+            headers: hash_including('Content-Type': 'application/json')
+          )
+        ).and_return(instance_double(HTTParty::Response, code: 200, body: sample_badge_response.to_json))
+
+        badges = Cronitor::Badge.all
+        expect(badges).to be_a(Hash)
+        expect(badges.keys).to contain_exactly('production', 'loyalty-42', 'qma-99')
+      end
+
+      it 'returns Badge objects with correct attributes' do
+        expect(HTTParty).to receive(:get).and_return(
+          instance_double(HTTParty::Response, code: 200, body: sample_badge_response.to_json)
+        )
+
+        badges = Cronitor::Badge.all
+        badge = badges['production']
+
+        expect(badge).to be_a(Cronitor::Badge)
+        expect(badge.tag).to eq('production')
+        expect(badge.svg_url).to eq('https://cronitor.io/badges/abc123/production/badge-key-1.svg')
+        expect(badge.url).to eq('https://cronitor.io/badges/abc123/production/badge-key-1')
+      end
+
+      it 'uses custom api_key when provided' do
+        custom_key = 'custom_api_key'
+        expect(HTTParty).to receive(:get).with(
+          'https://cronitor.io/api/badges',
+          hash_including(basic_auth: { username: custom_key, password: '' })
+        ).and_return(instance_double(HTTParty::Response, code: 200, body: sample_badge_response.to_json))
+
+        Cronitor::Badge.all(api_key: custom_key)
+      end
+
+      it 'uses custom api_version when provided' do
+        api_version = '2024-01-01'
+        expect(HTTParty).to receive(:get).with(
+          'https://cronitor.io/api/badges',
+          hash_including(headers: hash_including('Cronitor-Version': api_version))
+        ).and_return(instance_double(HTTParty::Response, code: 200, body: sample_badge_response.to_json))
+
+        Cronitor::Badge.all(api_version: api_version)
+      end
+
+      context 'when no API key is available' do
+        it 'raises an error' do
+          original_api_key = Cronitor.api_key
+          Cronitor.api_key = nil
+
+          expect { Cronitor::Badge.all }.to raise_error(Cronitor::Error, /No API key detected/)
+
+          Cronitor.api_key = original_api_key
+        end
+      end
+
+      context 'when API returns an error' do
+        it 'raises an error with response details' do
+          expect(HTTParty).to receive(:get).and_return(
+            instance_double(HTTParty::Response, code: 401, body: 'Unauthorized')
+          )
+
+          expect { Cronitor::Badge.all }.to raise_error(Cronitor::Error, /Error fetching badges: 401/)
+        end
+      end
+
+      context 'when API returns empty response' do
+        it 'returns an empty hash' do
+          expect(HTTParty).to receive(:get).and_return(
+            instance_double(HTTParty::Response, code: 200, body: {}.to_json)
+          )
+
+          badges = Cronitor::Badge.all
+          expect(badges).to eq({})
+        end
+      end
+    end
+
+    context '#initialize' do
+      it 'sets tag, svg_url, and url' do
+        badge = Cronitor::Badge.new(
+          tag: 'test-tag',
+          svg_url: 'https://example.com/badge.svg',
+          url: 'https://example.com/badge'
+        )
+
+        expect(badge.tag).to eq('test-tag')
+        expect(badge.svg_url).to eq('https://example.com/badge.svg')
+        expect(badge.url).to eq('https://example.com/badge')
+      end
+
+      it 'uses url as fallback for svg_url when svg_url is nil' do
+        badge = Cronitor::Badge.new(tag: 'test', url: 'https://example.com/badge')
+
+        expect(badge.svg_url).to eq('https://example.com/badge')
+      end
+
+      it 'uses svg_url as fallback for url when url is nil' do
+        badge = Cronitor::Badge.new(tag: 'test', svg_url: 'https://example.com/badge.svg')
+
+        expect(badge.url).to eq('https://example.com/badge.svg')
+      end
+    end
+
+    context '#key' do
+      it 'extracts badge key from standard svg_url' do
+        badge = Cronitor::Badge.new(
+          tag: 'test',
+          svg_url: 'https://cronitor.io/badges/abc123/production/my-badge-key.svg'
+        )
+
+        expect(badge.key).to eq('my-badge-key')
+      end
+
+      it 'extracts badge key from detailed badge svg_url' do
+        badge = Cronitor::Badge.new(
+          tag: 'test',
+          svg_url: 'https://cronitor.io/badges/abc123/production/my-badge-key/detailed.svg'
+        )
+
+        expect(badge.key).to eq('my-badge-key')
+      end
+
+      it 'returns nil when svg_url is nil' do
+        badge = Cronitor::Badge.new(tag: 'test')
+
+        expect(badge.key).to be_nil
+      end
+
+      it 'returns nil when svg_url does not match expected pattern' do
+        badge = Cronitor::Badge.new(
+          tag: 'test',
+          svg_url: 'https://example.com/some-other-url.svg'
+        )
+
+        expect(badge.key).to be_nil
+      end
+
+      it 'handles badge keys with hyphens and underscores' do
+        badge = Cronitor::Badge.new(
+          tag: 'test',
+          svg_url: 'https://cronitor.io/badges/abc/production/my_badge-key_123.svg'
+        )
+
+        expect(badge.key).to eq('my_badge-key_123')
       end
     end
   end
