@@ -159,11 +159,12 @@ module Cronitor
             query.compact!
             metrics = query[:metric]
             query.delete(:metric)
-            out = query.map { |k, v| "#{k}=#{v}" }
-            out += metrics.map { |m| "metric=#{m}" } unless metrics.nil?
+            out = query.map { |k, v| "#{k}=#{URI.encode_www_form_component(v.to_s)}" }
+            out += metrics.map { |m| "metric=#{URI.encode_www_form_component(m)}" } unless metrics.nil?
             out.join('&')
           end
           # query_string_normalizer for metrics. instead of metric[]=foo:1 we want metric=foo:1
+          # values are form-encoded so a message with &, # or + reaches the API unchanged
         )
 
         if response.code != 200
