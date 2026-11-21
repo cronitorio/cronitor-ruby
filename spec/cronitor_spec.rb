@@ -196,6 +196,33 @@ RSpec.describe Cronitor do
       series: 'world',
     } }
 
+    context 'with special characters in the message' do
+      before do
+        Cronitor.api_key = FAKE_API_KEY
+      end
+
+      after do
+        Cronitor.api_key = nil
+      end
+
+      it 'encodes every query value so the message is sent unchanged' do
+        message = "undefined method 'x' for nil & co #42 a+b=c"
+        query_string = nil
+        expect(HTTParty).to receive(:get) do |_url, opts|
+          query_string = opts[:query_string_normalizer].call(opts[:query])
+          instance_double(HTTParty::Response, code: 200)
+        end
+
+        monitor.ping(state: 'fail', message: message, host: 'web 1', metrics: { duration: 1.5 })
+
+        params = URI.decode_www_form(query_string)
+        expect(params.assoc('message')).to eq(['message', message])
+        expect(params.assoc('host')).to eq(['host', 'web 1'])
+        expect(params.assoc('metric')).to eq(['metric', 'duration:1.5'])
+        expect(params.map(&:first)).not_to include(' co #42')
+      end
+    end
+
     ['run', 'complete', 'fail', 'ok'].each do |state|
       context "Ping #{state}" do
         before(:all) do
