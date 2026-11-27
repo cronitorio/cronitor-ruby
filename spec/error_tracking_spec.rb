@@ -417,6 +417,30 @@ RSpec.describe 'Cronitor Error Tracking' do
       expect(zero_stub).to have_been_requested.once
     end
 
+    it 'does not loop on fractional or non-finite page_size with auto_paginate' do
+      expect(Cronitor::ErrorTrackingAPI.positive_page_size?(0.5)).to be(false)
+      expect(Cronitor::ErrorTrackingAPI.positive_page_size?(Float::INFINITY)).to be(false)
+      expect(Cronitor::ErrorTrackingAPI.positive_page_size?(Float::NAN)).to be(false)
+      expect(Cronitor::ErrorTrackingAPI.normalize_page_size(0.5)).to eq(50)
+      expect(Cronitor::ErrorTrackingAPI.normalize_page_size(Float::INFINITY)).to eq(50)
+
+      app_stub = stub_request(:get, 'https://cronitor.io/api/error-apps')
+                 .with(query: { page: '1', pageSize: '50' })
+                 .to_return(status: 200, body: { apps: Array.new(50) { |i| { key: "app_#{i}" } } }.to_json)
+
+      apps = Cronitor::ErrorApp.list(page_size: 0.5, auto_paginate: true)
+      expect(apps.length).to eq(50)
+      expect(app_stub).to have_been_requested.once
+
+      group_stub = stub_request(:get, 'https://cronitor.io/api/errors')
+                   .with(query: { 'page' => '1', 'pageSize' => '50' })
+                   .to_return(status: 200, body: { errors: Array.new(50) { |i| { key: "err_#{i}" } } }.to_json)
+
+      groups = Cronitor::ErrorGroup.list(page_size: 0.5, auto_paginate: true)
+      expect(groups.length).to eq(50)
+      expect(group_stub).to have_been_requested.once
+    end
+
     it 'raises ErrorAppNotFound on 404' do
       stub_request(:get, 'https://cronitor.io/api/error-apps/missing')
         .to_return(status: 404, body: 'Not Found')

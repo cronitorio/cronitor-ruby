@@ -48,7 +48,10 @@ module Cronitor
       end
 
       def positive_page_size?(page_size)
-        page_size.is_a?(Numeric) && page_size.positive?
+        return false unless page_size.is_a?(Numeric) && page_size.real?
+        return false if page_size.respond_to?(:finite?) && !page_size.finite?
+
+        page_size.to_i.positive?
       end
 
       def normalize_page_size(page_size)
