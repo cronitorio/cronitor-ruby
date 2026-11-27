@@ -6,11 +6,11 @@ module Cronitor
     TYPE_HEARTBEAT = 'heartbeat',
     TYPE_CHECK = 'check'
   ].freeze
-  YAML_KEYS = MONITOR_TYPES.map { |t| "#{t}s" }
+  YAML_KEYS = (MONITOR_TYPES.map { |t| "#{t}s" } + ['errors']).freeze
 
   class << self
     attr_accessor :api_key, :api_version, :environment, :logger, :config, :timeout, :ping_timeout,
-                  :auto_discover_sidekiq, :telemetry_domain
+                  :auto_discover_sidekiq, :telemetry_domain, :dsn, :release, :capture_exceptions
 
     def configure(&block)
       block.call(self)
@@ -25,6 +25,9 @@ module Cronitor
   self.config = ENV.fetch('CRONITOR_CONFIG', nil)
   self.auto_discover_sidekiq = ENV.fetch('CRONITOR_AUTO_DISCOVER_SIDEKIQ', 'true').casecmp('true').zero? # https://github.com/cronitorio/cronitor-sidekiq
   self.telemetry_domain = ENV.fetch('CRONITOR_TELEMETRY_DOMAIN', 'cronitor.link')
+  self.dsn = ENV.fetch('CRONITOR_DSN', nil)
+  self.release = ENV.fetch('CRONITOR_RELEASE', nil)
+  self.capture_exceptions = true
   self.logger = Logger.new($stdout)
   logger.level = Logger::INFO
 end

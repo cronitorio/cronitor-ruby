@@ -186,6 +186,38 @@ module Cronitor
       ping(state: 'ok')
     end
 
+    def capture_exception(exception = nil, series: nil, level: 'error', tags: nil, extra: nil, fingerprint: nil)
+      Capture._capture_exception(
+        exception,
+        monitor: key,
+        series: series,
+        level: level,
+        tags: tags,
+        extra: extra,
+        fingerprint: fingerprint,
+        env: env
+      )
+    rescue StandardError => e
+      Cronitor.logger&.warn("Cronitor could not capture an exception: #{e}")
+      nil
+    end
+
+    def capture_message(message, level: 'info', series: nil, tags: nil, extra: nil, fingerprint: nil)
+      Capture._capture_message(
+        message,
+        level: level,
+        monitor: key,
+        series: series,
+        tags: tags,
+        extra: extra,
+        fingerprint: fingerprint,
+        env: env
+      )
+    rescue StandardError => e
+      Cronitor.logger&.warn("Cronitor could not capture a message: #{e}")
+      nil
+    end
+
     def pause(hours = nil)
       pause_url = "#{monitor_api_url}/#{key}/pause"
       pause_url += "/#{hours}" unless hours.nil?
