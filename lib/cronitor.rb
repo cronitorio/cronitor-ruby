@@ -10,7 +10,10 @@ require 'yaml'
 require 'cronitor/config'
 require 'cronitor/error'
 require 'cronitor/version'
+require 'cronitor/ingest'
+require 'cronitor/capture'
 require 'cronitor/monitor'
+require 'cronitor/error_tracking'
 
 module Cronitor
   def self.read_config(path = nil)
@@ -60,17 +63,70 @@ module Cronitor
     puts("Configuration saved to #{config_path}")
   end
 
-  def self.job(key, &block)
+  def self.capture_exception(exception = nil, monitor: nil, series: nil, level: 'error',
+                             tags: nil, extra: nil, fingerprint: nil)
+    Capture.capture_exception(
+      exception,
+      monitor: monitor,
+      series: series,
+      level: level,
+      tags: tags,
+      extra: extra,
+      fingerprint: fingerprint
+    )
+  end
+
+  def self.capture_message(message, level: 'info', monitor: nil, series: nil,
+                           tags: nil, extra: nil, fingerprint: nil)
+    Capture.capture_message(
+      message,
+      level: level,
+      monitor: monitor,
+      series: series,
+      tags: tags,
+      extra: extra,
+      fingerprint: fingerprint
+    )
+  end
+
+  def self.flush(timeout: 2.0)
+    Ingest.flush(timeout: timeout)
+  end
+
+  def self.safe_ping(monitor, params)
+    monitor.ping(params)
+  rescue StandardError => e
+    Cronitor.logger&.warn("Cronitor could not send the #{params[:state]} ping for #{monitor.key}: #{e}")
+    false
+  end
+
+  def self.job(key, capture_exceptions: nil, &block)
     monitor = Monitor.new(key)
     series = Time.now.to_f
-    monitor.ping(state: 'run', series: series)
+    safe_ping(monitor, state: 'run', series: series)
+    token = Capture.bind_job(key, series, monitor.env)
 
     begin
-      block.call
-      monitor.ping(state: 'complete', series: series)
+      result = block.call
+      safe_ping(monitor, state: 'complete', series: series)
+      result
     rescue StandardError => e
-      monitor.ping(state: 'fail', message: e.message[[0, e.message.length - 1600].max..-1], series: series)
+      message = e.message.to_s
+      safe_ping(monitor, state: 'fail', message: message[[0, message.length - 1600].max..-1], series: series)
+      should_capture = capture_exceptions.nil? ? Cronitor.capture_exceptions : capture_exceptions
+      if should_capture && !Ingest.parse_dsn(Cronitor.dsn).nil?
+        Capture._capture_exception(
+          e,
+          monitor: key,
+          series: series,
+          env: monitor.env,
+          mechanism: 'cronitor.job',
+          handled: false
+        )
+      end
       raise e
+    ensure
+      Capture.unbind_job(token)
     end
   end
 end

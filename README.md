@@ -11,6 +11,7 @@ In this guide:
 - [Installation](#Installation)
 - [Monitoring Background Jobs](#monitoring-background-jobs)
 - [Sending Telemetry Events](#sending-telemetry-events)
+- [Error Tracking](#error-tracking)
 - [Configuring Monitors](#configuring-monitors)
 - [Package Configuration & Env Vars](#package-configuration)
 - [Contributing](#contributing)
@@ -60,6 +61,109 @@ monitor.ping(state: 'run', env: 'staging') # a job/process has started in a stag
 monitor.ping(state: 'complete', metrics: {count: 1000, error_count: 17})
 ```
 
+## Error Tracking
+
+Cronitor captures exceptions and messages natively and sends them from a background thread, so your application is not blocked or interrupted by the network: requests time out after 5 seconds, transport failures are logged as warnings, and capture methods never raise into your code.
+
+Configure `Cronitor.dsn` (or the `CRONITOR_DSN` environment variable) using the DSN from an Error App created in the Cronitor dashboard or via `Cronitor::ErrorApp.create`:
+
+```ruby
+require 'cronitor'
+
+Cronitor.dsn = 'https://<ingest_key>@cronitor.link/1' # or CRONITOR_DSN
+Cronitor.environment = 'production'                   # optional, or CRONITOR_ENVIRONMENT
+Cronitor.release = '5.4.0'                            # optional, or CRONITOR_RELEASE
+```
+
+### Capturing exceptions and messages
+
+```ruby
+begin
+  import_orders
+rescue StandardError => e
+  Cronitor.capture_exception(
+    e,
+    monitor: 'import-orders',
+    level: 'error',
+    tags: { region: 'us-east-1' },
+    extra: { batch: 42 },
+    fingerprint: ['import-orders', 'timeout']
+  )
+end
+
+Cronitor.capture_message(
+  'Disk 90% full',
+  level: 'warning',
+  tags: { host: 'worker-1' },
+  extra: { mount: '/var' },
+  fingerprint: 'disk-space-warning'
+)
+
+# Bound to a monitor and its environment
+monitor = Cronitor::Monitor.new('import-orders')
+monitor.capture_exception # inside a rescue block, defaults to the current exception ($!)
+monitor.capture_message('Import finished with warnings', level: 'warning')
+```
+
+`capture_exception` and `capture_message` return the event id String, or `nil` if nothing was sent (for example when `Cronitor.dsn` is not configured). Events include the `cause` chain, backtrace frames with five lines of source context, hostname, release, and environment. Local variables are never sent. `fingerprint` accepts a String or an Array of strings for custom grouping.
+
+Queued events are flushed automatically at process exit. Call `Cronitor.flush(timeout: 2.0)` to flush earlier, for example at the end of a short-lived worker or serverless handler.
+
+### Exceptions inside `Cronitor.job`
+
+When a block passed to `Cronitor.job` raises an exception, Cronitor sends a best-effort `fail` ping, captures an unhandled exception event (when `Cronitor.dsn` is configured and auto-capture is enabled) bound to the same monitor key and series, and continues to re-raise the original exception.
+
+Auto-capture defaults to `true`. Turn it off globally or per call:
+
+```ruby
+Cronitor.capture_exceptions = false
+
+Cronitor.job('import-orders', capture_exceptions: false) do
+  import_orders
+end
+```
+
+Exceptions and messages captured while `Cronitor.job` runs are bound to that monitor and run series automatically via thread-local state. New threads spawned inside a job do not inherit this binding, so pass `monitor:` and `series:` explicitly from worker threads.
+
+### Managing Error Apps and Error Groups
+
+Use `Cronitor::ErrorApp` and `Cronitor::ErrorGroup` with your REST API key (`Cronitor.api_key`):
+
+```ruby
+require 'cronitor'
+
+Cronitor.api_key = 'api_key_123'
+
+# Create and manage Error Apps
+app = Cronitor::ErrorApp.create(name: 'Billing API')
+puts "#{app.key} #{app.dsn}"
+
+apps = Cronitor::ErrorApp.list(page: 1, page_size: 50)
+app.update(name: 'Payments API')
+app.rotate_key # refreshes app.dsn; old DSN stops working immediately
+app.delete
+
+# Query and triage Error Groups
+groups = Cronitor::ErrorGroup.list(app: 'app_0123456789abcdef', status: 'open', env: 'production')
+group = Cronitor::ErrorGroup.new('err_0123456789abcdef')
+puts group.data[:title]
+group.update(status: 'resolved', env: 'production')
+
+events = group.events(env: 'production', limit: 25)
+event = group.event(events['data'].first['event_id'])
+```
+
+### Already using the Sentry SDK?
+
+Cronitor accepts the Sentry envelope wire format, so `sentry-ruby` works with the same Error App DSN. Bind events to a monitor with a tag:
+
+```ruby
+Sentry.init do |config|
+  config.dsn = 'https://<ingest_key>@cronitor.link/1'
+end
+Sentry.set_tags('cronitor.monitor' => 'nightly-job')
+```
+
 ## Configuring Monitors
 
 ### YAML Configuration File
@@ -85,7 +189,7 @@ Cronitor.validate_config
 Cronitor.generate_config
 ```
 
-The `cronitor.yaml` file includes three top level keys `jobs`, `checks`, `heartbeats`. You can configure monitors under each key by defining [monitors](https://cronitor.io/docs/monitor-api#attributes).
+The `cronitor.yaml` file includes four top level keys `jobs`, `checks`, `heartbeats`, and `errors`. You can configure monitors under each key by defining [monitors](https://cronitor.io/docs/monitor-api#attributes).
 
 ```yaml
 jobs:
@@ -127,6 +231,17 @@ heartbeats:
             alerts: ['deploys-slack']
             events: true # send alert when the event occurs
 
+errors:
+    billing-error-spikes:
+        trigger: spike
+        apps:
+            - app_0123456789abcdef
+        threshold: 25
+        window: 5m
+        per: fingerprint
+        notify:
+            - devops-alert-pagerduty
+
 ```
 #### Async Uploads
 If you are working with large YAML files (300+ monitors), you may hit timeouts when trying to sync monitors in a single http request. This workload to be processed asynchronously by adding the key `async: true` to the config file. The request will immediately return a `batch_key`. If a `webhook_url` parameter is included, Cronitor will POST to that URL with the results of the background processing and will include the `batch_key` matching the one returned in the initial response.
@@ -158,6 +273,13 @@ monitors = [
       'response.code = 200',
       'response.time < 600ms'
     ]
+  },
+  {
+    type: 'errors',
+    key: 'new-billing-errors',
+    trigger: 'new',
+    apps: ['app_0123456789abcdef'],
+    notify: ['devops-alerts-slack']
   }
 ]
 
@@ -214,6 +336,9 @@ require 'cronitor'
 Cronitor.api_key = 'apiKey123'
 Cronitor.api_version = '2020-10-01'
 Cronitor.environment = 'cluster_1_prod'
+Cronitor.dsn = 'https://<ingest_key>@cronitor.link/1' # or ENV['CRONITOR_DSN']
+Cronitor.release = '5.4.0' # or ENV['CRONITOR_RELEASE']
+Cronitor.capture_exceptions = true # default true; controls Cronitor.job auto-capture
 
 Cronitor.timeout = 20 # defaults to 10 can also be set with ENV['CRONITOR_TIMEOUT']
 Cronitor.logger = nil # defaults to Logger.new($stdout)

@@ -9,4 +9,10 @@ module Cronitor
 
   class ConfigurationError < Error
   end
+
+  class ErrorAppNotFound < Error
+  end
+
+  class ErrorGroupNotFound < Error
+  end
 end
